@@ -1,6 +1,6 @@
 import env from './env.config.js';
 import { initializeApp } from 'firebase/app';
-import { collection,getFirestore } from 'firebase/firestore';
+import { collection, getFirestore, addDoc, setDoc, doc, getDoc, getDocs, deleteDoc, updateDoc } from 'firebase/firestore';
 
 
 // Firebase configuration
@@ -18,4 +18,4 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const users = collection(db, 'users');
 
-export { app, db, users };
+export { app, db, users, addDoc, setDoc, doc, getDoc, getDocs, deleteDoc, updateDoc };

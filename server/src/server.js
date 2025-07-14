@@ -8,18 +8,20 @@ import './config/firebase.config.js';
 
 dotenv.config('../');
 
-const app = express();
-app.use(cors(
-    {
-        origin: 'http://localhost:5173',
-        methods: ['GET', 'POST', 'PUT', 'DELETE'],
-        credentials: true
-    }
-));
-app.use(helmet());
-app.use(express.json());
 
-app.use('/user', userRouter);
+const app = express();
+// Parse application/x-www-form-urlencoded
+app.use(express.urlencoded({ extended: true }));
+// Parse application/json
+app.use(express.json());
+app.use(cors({
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
+app.use(helmet());
+
+app.use('/api/user', userRouter);
 
 
 app.listen(3000, () => {
