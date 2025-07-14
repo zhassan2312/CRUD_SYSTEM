@@ -1,6 +1,7 @@
 import env from './env.config.js';
 import { initializeApp } from 'firebase/app';
-// import { getAnalytics } from 'firebase/analytics';
+import { getFirestore } from 'firebase/firestore';
+
 // Firebase configuration
 const firebaseConfig = {
     apiKey: env.FIREBASE_API_KEY,
@@ -13,5 +14,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-// const analytics = getAnalytics(app);
-export { app };
+const db = getFirestore(app);
+const users = db.collection('users');
+
+export { app, db, users };

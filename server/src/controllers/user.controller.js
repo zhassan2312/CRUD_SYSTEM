@@ -1,56 +1,87 @@
-
+import {users} from '../config/firebase.config.js';
 const addUser = async(req, res) => {
     try{
         // Logic to add a user
-        const {} = req.body; 
-        res.status(201).send("User added successfully");
+        const { fullName, Password, email, gender, age } = req.body;
+
+        await users.doc(email).set({
+            fullName,
+            Password,
+            email,
+            gender,
+            age
+        });
+        res.status(201).json("User added successfully");
 
     }catch(error) {
         console.error("Error adding user:", error);
-        res.status(500).send("Error adding user");
+        res.status(500).json("Error adding user");
     }
 }
 
 const getUser = async(req, res) => {
     
+
     try{
-        // Logic to get a user by ID
-        const userId = req.params.id;
-        res.send(`User details for ID: ${userId}`);
+        const email = req.params.email;
+        const user = await users.doc(email).get();
+        if (!user.exists) {
+            return res.status(404).json("User not found");
+        }
+        res.status(200).json(user.data());
     }catch(error) {
         console.error("Error getting user:", error);
-        res.status(500).send("Error getting user");
+        res.status(500).json("Error getting user");
     }
 }
 
 const getAllUsers=async(req, res) => {
     try{
-        // Logic to get all users
-        res.send('List of all users');
+        const snapshot = await users.get();
+        const usersList = snapshot.docs.map(doc => doc.data());
+        res.status(200).json(usersList);
     }catch(error) {
         console.error("Error getting all users:", error);
-        res.status(500).send("Error getting all users");
+        res.status(500).json("Error getting all users");
     }
 }
 
 const deleteUser = async(req, res) => {
     try{
-        // Logic to delete a user by ID
-        const userId = req.params.id;
+        const email = req.params.email;
+        const user = await users.doc(email).get();
+        if (!user.exists) {
+            return res.status(404).json("User not found");
+        }
+        await users.doc(email).delete();
+        res.status(200).json("User deleted successfully");
+
     }catch(error) {
         console.error("Error deleting user:", error);
-        res.status(500).send("Error deleting user");
+        res.status(500).json("Error deleting user");
     }
-    res.send(`User with ID: ${userId} deleted successfully`);
 }
 
 const editUser = async(req, res) => {
     try{
-        // Logic to edit a user by ID
-        const userId = req.params.id;
+        const email = req.params.email;
+        const user = await users.doc(email).get();
+        if (!user.exists) {
+            return res.status(404).json("User not found");
+        }
+        const { fullName, Password, gender, age } = req.body;
+
+        await users.doc(email).update({
+            fullName,
+            Password,
+            gender,
+            age
+        });
+        res.status(200).json("User updated successfully");
+        
     }catch(error) {
         console.error("Error editing user:", error);
-        res.status(500).send("Error editing user");
+        res.status(500).json("Error editing user");
     }
 }
 
