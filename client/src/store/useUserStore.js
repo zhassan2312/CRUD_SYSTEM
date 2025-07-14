@@ -19,41 +19,57 @@ const useUserStore = create((set) => ({
     addUser: async (user) => {
         set({ loading: true, error: null });
         try {
-            const response = await api.post('/addUser', user);
-            set((state) => ({ users: [...state.users, response.data], loading: false }));
+            // Map 'name' to 'fullName' for backend
+            const userData = {
+                fullName: user.name,
+                email: user.email,
+                password: user.password,
+                gender: user.gender,
+                age: parseInt(user.age)
+            };
+            await api.post('/addUser', userData);
+            // Refresh the user list after adding
+            const response = await api.get('/getAllUsers');
+            set({ users: response.data, loading: false });
         } catch (error) {
             set({ error: error.message, loading: false });
         }
     },
-    getUser: async (email) => {
+    getUser: async (id) => {
         set({ loading: true, error: null });
         try {
-            const response = await api.get(`/getUser/${email}`);
+            const response = await api.get(`/getUser/${id}`);
             set({ user: response.data, loading: false });
         } catch (error) {
             set({ error: error.message, loading: false });
         }
     },
-    updateUser: async (email, user) => {
+    updateUser: async (id, user) => {
         set({ loading: true, error: null });
         try {
-            const response = await api.put(`/updateUser/${email}`, user);
-            set((state) => ({
-                users: state.users.map((u) => (u.email === email ? response.data : u)),
-                loading: false
-            }));
+            // Map 'name' to 'fullName' for backend
+            const userData = {
+                fullName: user.name,
+                email: user.email,
+                password: user.password,
+                gender: user.gender,
+                age: parseInt(user.age)
+            };
+            await api.put(`/updateUser/${id}`, userData);
+            // Refresh the user list after updating
+            const response = await api.get('/getAllUsers');
+            set({ users: response.data, loading: false });
         } catch (error) {
             set({ error: error.message, loading: false });
         }
     },
-    deleteUser: async (email) => {
+    deleteUser: async (id) => {
         set({ loading: true, error: null });
         try {
-            await api.delete(`/deleteUser/${email}`);
-            set((state) => ({
-                users: state.users.filter((user) => user.email !== email),
-                loading: false
-            }));
+            await api.delete(`/deleteUser/${id}`);
+            // Refresh the user list after deleting
+            const response = await api.get('/getAllUsers');
+            set({ users: response.data, loading: false });
         } catch (error) {
             set({ error: error.message, loading: false });
         }

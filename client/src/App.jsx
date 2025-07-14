@@ -13,9 +13,9 @@ const defaultValues = {
 
 const App = () => {
   const { users, fetchUsers, addUser, updateUser, deleteUser, loading, error } = useUserStore();
-  const [editEmail, setEditEmail] = useState(null);
+  const [editId, setEditId] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [deleteEmail, setDeleteEmail] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm({ defaultValues });
 
   React.useEffect(() => {
@@ -23,9 +23,9 @@ const App = () => {
   }, [fetchUsers]);
 
   const onSubmit = async (data) => {
-    if (editEmail !== null) {
-      await updateUser(editEmail, data);
-      setEditEmail(null);
+    if (editId !== null) {
+      await updateUser(editId, data);
+      setEditId(null);
     } else {
       await addUser(data);
     }
@@ -34,28 +34,33 @@ const App = () => {
 
   const handleEdit = (index) => {
     const user = users[index];
-    Object.keys(defaultValues).forEach((key) => setValue(key, user[key]));
-    setEditEmail(user.email);
+    // Map fullName from backend to name for the form
+    setValue('name', user.fullName);
+    setValue('email', user.email);
+    setValue('password', user.password);
+    setValue('gender', user.gender);
+    setValue('age', user.age);
+    setEditId(user.id);
   };
 
   const handleDelete = (index) => {
-    setDeleteEmail(users[index].email);
+    setDeleteId(users[index].id);
     setShowConfirm(true);
   };
 
   const confirmDelete = async () => {
-    await deleteUser(deleteEmail);
+    await deleteUser(deleteId);
     setShowConfirm(false);
-    setDeleteEmail(null);
-    if (editEmail === deleteEmail) {
+    setDeleteId(null);
+    if (editId === deleteId) {
       reset(defaultValues);
-      setEditEmail(null);
+      setEditId(null);
     }
   };
 
   const cancelDelete = () => {
     setShowConfirm(false);
-    setDeleteEmail(null);
+    setDeleteId(null);
   };
 
   return (
@@ -63,7 +68,7 @@ const App = () => {
       {/* Left: Form */}
       <div style={{ flex: 1, padding: '40px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%', maxWidth: 400, background: '#f9f9f9', padding: 32, borderRadius: 12, boxShadow: '0 2px 8px #0001' }}>
-          <h2 style={{ marginBottom: 24 }}>{editEmail !== null ? 'Edit User' : 'Add User'}</h2>
+          <h2 style={{ marginBottom: 24 }}>{editId !== null ? 'Edit User' : 'Add User'}</h2>
           {/* Name */}
           <div style={{ marginBottom: 18 }}>
             <input
@@ -159,10 +164,10 @@ const App = () => {
             {errors.age && <div style={{ color: '#e74c3c', fontSize: 13 }}>{errors.age.message}</div>}
           </div>
           <button type="submit" style={{ width: '100%', padding: 12, background: '#0984e3', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 16, cursor: 'pointer' }}>
-            {editEmail !== null ? 'Update' : 'Submit'}
+            {editId !== null ? 'Update' : 'Submit'}
           </button>
-          {editEmail !== null && (
-            <button type="button" onClick={() => { reset(defaultValues); setEditEmail(null); }} style={{ width: '100%', marginTop: 10, padding: 10, background: '#b2bec3', color: '#222', border: 'none', borderRadius: 6, fontWeight: 500, fontSize: 15, cursor: 'pointer' }}>
+          {editId !== null && (
+            <button type="button" onClick={() => { reset(defaultValues); setEditId(null); }} style={{ width: '100%', marginTop: 10, padding: 10, background: '#b2bec3', color: '#222', border: 'none', borderRadius: 6, fontWeight: 500, fontSize: 15, cursor: 'pointer' }}>
               Cancel Edit
             </button>
           )}
@@ -177,6 +182,7 @@ const App = () => {
             <tr>
               <th style={{ padding: 12 }}>Name</th>
               <th style={{ padding: 12 }}>Email</th>
+              <th style={{ padding: 12 }}>Password</th>
               <th style={{ padding: 12 }}>Gender</th>
               <th style={{ padding: 12 }}>Age</th>
               <th style={{ padding: 12 }}>Edit</th>
@@ -188,9 +194,10 @@ const App = () => {
               <tr><td colSpan={6} style={{ textAlign: 'center', padding: 24, color: '#636e72' }}>No users yet.</td></tr>
             ) : (
               users.map((user, idx) => (
-                <tr key={user.email} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: 10 }}>{user.name}</td>
+                <tr key={user.id} style={{ borderBottom: '1px solid #eee' }}>
+                  <td style={{ padding: 10 }}>{user.fullName}</td>
                   <td style={{ padding: 10 }}>{user.email}</td>
+                  <td style={{ padding: 10 }}>{user.password}</td>
                   <td style={{ padding: 10 }}>{user.gender}</td>
                   <td style={{ padding: 10 }}>{user.age}</td>
                   <td style={{ padding: 10 }}>
