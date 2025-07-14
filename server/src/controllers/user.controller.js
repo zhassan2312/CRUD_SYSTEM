@@ -38,7 +38,9 @@ const getUser = async(req, res) => {
 const getAllUsers=async(req, res) => {
     try{
         const snapshot = await users.get();
+
         const usersList = snapshot.docs.map(doc => doc.data());
+        console.log("All users:", usersList);
         res.status(200).json(usersList);
     }catch(error) {
         console.error("Error getting all users:", error);

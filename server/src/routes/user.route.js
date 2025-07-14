@@ -4,7 +4,7 @@ import { addUser,getUser,getAllUsers,deleteUser,editUser} from "../controllers/u
 const router = Router();
 
 router.post('/addUser',addUser);
-router.get('/allUsers',getAllUsers);
+router.get('/getAllUsers',getAllUsers);
 router.get('/getUser/:id',getUser);
 router.put('/updateUser/:id', editUser);
 router.delete('/deleteUser/:id', deleteUser);
