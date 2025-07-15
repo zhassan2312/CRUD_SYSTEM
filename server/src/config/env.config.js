@@ -1,7 +1,13 @@
 
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config('../../');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env from project root (3 levels up from this file)
+dotenv.config('../');
 
 const env={
     PORT: process.env.PORT || 3000,
@@ -13,6 +19,13 @@ const env={
     FIREBASE_APP_ID: process.env.FIREBASE_APP_ID,
     FIREBASE_MEASUREMENT_ID: process.env.FIREBASE_MEASUREMENT_ID,
     NODE_ENV: process.env.NODE_ENV || 'development',
+    GCLOUD_STORAGE_BUCKET: process.env.GCLOUD_STORAGE_BUCKET,
 }
+
+// Log configuration status (without sensitive data)
+console.log('Environment configuration loaded:');
+console.log('PROJECT_ID:', env.FIREBASE_PROJECT_ID ? 'Set' : 'Missing');
+console.log('STORAGE_BUCKET:', env.FIREBASE_STORAGE_BUCKET ? 'Set' : 'Missing');
+console.log('AUTH_DOMAIN:', env.FIREBASE_AUTH_DOMAIN ? 'Set' : 'Missing');
 
 export default env;

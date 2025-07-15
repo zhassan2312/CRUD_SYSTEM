@@ -1,7 +1,9 @@
 import {users, addDoc, doc, getDoc, getDocs, deleteDoc, updateDoc} from '../config/firebase.config.js';
+import { uploadFileAndGetUrl } from '../config/gcloud.config.js';
+
 const addUser = async(req, res) => {
     try {
-        // Accept fields directly from req.body
+        // Accept fields from req.body and file from req.file (if using multer)
         const {
             fullName,
             password,
@@ -9,6 +11,23 @@ const addUser = async(req, res) => {
             gender,
             age
         } = req.body;
+
+        // Handle file upload if present
+        let profilePicUrl = '';
+        if (req.file) {
+            try {
+                const fileObject = {
+                    buffer: req.file.buffer,
+                    name: req.file.originalname,
+                    type: req.file.mimetype
+                };
+                profilePicUrl = await uploadFileAndGetUrl(fileObject);
+                console.log("File uploaded successfully:", profilePicUrl);
+            } catch (uploadError) {
+                console.error("Error uploading file:", uploadError);
+                console.log("Continuing without file upload due to storage error");
+            }
+        }
 
         if (!fullName || !password || !email || !gender || !age) {
             return res.status(400).json("All fields are required");
@@ -21,12 +40,21 @@ const addUser = async(req, res) => {
             email,
             gender,
             age,
+            profilePic: profilePicUrl,
             createdAt: new Date()
         });
        
         res.status(201).json({
             message: "User added successfully",
-            id: docRef.id
+            user: {
+                id: docRef.id,
+                fullName,
+                email,
+                gender,
+                age,
+                profilePic: profilePicUrl,
+                createdAt: new Date()
+            }
         });
     } catch(error) {
         console.error("Error adding user:", error);
@@ -133,12 +161,31 @@ const editUser = async(req, res) => {
             }
         }
 
+        // Handle file upload for update
+        let profilePicUrl = currentUserData.profilePic;
+        if (req.file) {
+            try {
+                const fileObject = {
+                    buffer: req.file.buffer,
+                    name: req.file.originalname,
+                    type: req.file.mimetype
+                };
+                profilePicUrl = await uploadFileAndGetUrl(fileObject);
+                console.log("File updated successfully:", profilePicUrl);
+            } catch (uploadError) {
+                console.error("Error uploading file during update:", uploadError);
+                // Keep the existing profile pic if upload fails
+                console.log("Keeping existing profile pic due to storage error");
+            }
+        }
+
         await updateDoc(userDocRef, {
             fullName,
             email,
             password,
             gender,
             age,
+            profilePic: profilePicUrl,
             updatedAt: new Date()
         });
         console.log("User updated successfully:", id);

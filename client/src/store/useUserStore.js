@@ -19,15 +19,25 @@ const useUserStore = create((set) => ({
     addUser: async (user) => {
         set({ loading: true, error: null });
         try {
-            // Map 'name' to 'fullName' for backend
-            const userData = {
-                fullName: user.name,
-                email: user.email,
-                password: user.password,
-                gender: user.gender,
-                age: parseInt(user.age)
-            };
-            await api.post('/addUser', userData);
+            // Create FormData for file upload
+            const formData = new FormData();
+            formData.append('fullName', user.name);
+            formData.append('email', user.email);
+            formData.append('password', user.password);
+            formData.append('gender', user.gender);
+            formData.append('age', parseInt(user.age));
+            
+            // Add profile pic file if present
+            if (user.profilePic) {
+                formData.append('profilePic', user.profilePic);
+            }
+
+            await api.post('/addUser', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            
             // Refresh the user list after adding
             const response = await api.get('/getAllUsers');
             set({ users: response.data, loading: false });
@@ -47,15 +57,25 @@ const useUserStore = create((set) => ({
     updateUser: async (id, user) => {
         set({ loading: true, error: null });
         try {
-            // Map 'name' to 'fullName' for backend
-            const userData = {
-                fullName: user.name,
-                email: user.email,
-                password: user.password,
-                gender: user.gender,
-                age: parseInt(user.age)
-            };
-            await api.put(`/updateUser/${id}`, userData);
+            // Create FormData for file upload
+            const formData = new FormData();
+            formData.append('fullName', user.name);
+            formData.append('email', user.email);
+            formData.append('password', user.password);
+            formData.append('gender', user.gender);
+            formData.append('age', parseInt(user.age));
+            
+            // Add profile pic file if present
+            if (user.profilePic) {
+                formData.append('profilePic', user.profilePic);
+            }
+
+            await api.put(`/updateUser/${id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            
             // Refresh the user list after updating
             const response = await api.get('/getAllUsers');
             set({ users: response.data, loading: false });

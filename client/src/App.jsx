@@ -25,8 +25,18 @@ const App = () => {
     email: '',
     password: '',
     gender: '',
-    age: ''
+    age: '',
+    profilePic: null, // File object
+    profilePicUrl: '' // For preview
   });
+
+  // Handle file input
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, profilePic: file, profilePicUrl: URL.createObjectURL(file) }));
+    }
+  };
   const [errors, setErrors] = useState({});
   const [hoveredUser, setHoveredUser] = useState(null);
 
@@ -78,7 +88,15 @@ const App = () => {
         await addUser(formData);
         showToast('User added successfully!', 'success');
       }
-      setFormData({ name: '', email: '', password: '', gender: '', age: '' });
+      setFormData({ 
+        name: '', 
+        email: '', 
+        password: '', 
+        gender: '', 
+        age: '', 
+        profilePic: null, 
+        profilePicUrl: '' 
+      });
     } catch (err) {
       showToast('An error occurred while saving user.', 'error');
     }
@@ -91,7 +109,9 @@ const App = () => {
       email: user.email,
       password: user.password,
       gender: user.gender,
-      age: user.age.toString()
+      age: user.age.toString(),
+      profilePic: null, // Don't pre-load the file
+      profilePicUrl: user.profilePic || '' // Show current profile pic URL for preview
     });
     setEditId(user.id);
   };
@@ -108,7 +128,15 @@ const App = () => {
       setDeleteId(null);
       showToast('User deleted successfully!', 'success');
       if (editId === deleteId) {
-        setFormData({ name: '', email: '', password: '', gender: '', age: '' });
+        setFormData({ 
+          name: '', 
+          email: '', 
+          password: '', 
+          gender: '', 
+          age: '', 
+          profilePic: null, 
+          profilePicUrl: '' 
+        });
         setEditId(null);
       }
     } catch (err) {
@@ -294,6 +322,20 @@ const App = () => {
                   )}
                 </div>
 
+                {/* Profile Pic Input */}
+                <div className="group">
+                  <label className="block mb-1 font-medium text-gray-700">Profile Pic</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  {formData.profilePicUrl && (
+                    <img src={formData.profilePicUrl} alt="Profile Preview" className="mt-2 w-20 h-20 object-cover rounded-full border-2 border-blue-200 shadow" />
+                  )}
+                </div>
+
                 {/* Submit Button */}
                 <button
                   onClick={handleSubmit}
@@ -322,7 +364,15 @@ const App = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      setFormData({ name: '', email: '', password: '', gender: '', age: '' });
+                      setFormData({ 
+                        name: '', 
+                        email: '', 
+                        password: '', 
+                        gender: '', 
+                        age: '', 
+                        profilePic: null, 
+                        profilePicUrl: '' 
+                      });
                       setEditId(null);
                       setErrors({});
                     }}
@@ -352,6 +402,7 @@ const App = () => {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profile</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Password</th>
@@ -363,7 +414,7 @@ const App = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {users.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                         <div className="flex flex-col items-center gap-2">
                           <Users size={48} className="text-gray-300" />
                           <p className="text-lg">No users found</p>
@@ -381,11 +432,18 @@ const App = () => {
                         onMouseEnter={() => setHoveredUser(idx)}
                         onMouseLeave={() => setHoveredUser(null)}
                       >
+                        {/* Profile Pic */}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {user.profilePic ? (
+                            <img src={user.profilePic} alt="Profile" className="w-10 h-10 object-cover rounded-full border-2 border-blue-200 shadow" />
+                          ) : (
+                            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border-2 border-gray-200">
+                              <User className="w-5 h-5 text-gray-400" />
+                            </div>
+                          )}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full">
-                              <User className="w-4 h-4 text-white" />
-                            </div>
                             <span className="text-sm font-medium text-gray-900">{user.fullName}</span>
                           </div>
                         </td>
