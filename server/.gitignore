@@ -37,3 +37,13 @@ coverage/
 # Misc
 *.local
 *.cache
+
+
+# Firebase CLI files
+.firebase/
+.firebaserc
+.firebaserc
+.firestore.indexes.json
+.firestore.rules
+.storage.rules
+.firebase-debug.log*

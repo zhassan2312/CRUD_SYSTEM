@@ -1,4 +1,4 @@
-import {users, addDoc, doc, getDoc, getDocs, deleteDoc, updateDoc} from '../config/firebase.config.js';
+import {users, addDoc,mail, doc, getDoc, getDocs, deleteDoc, updateDoc} from '../config/firebase.config.js';
 import { uploadFileAndGetUrl } from '../config/gcloud.config.js';
 
 const addUser = async(req, res) => {
@@ -43,6 +43,34 @@ const addUser = async(req, res) => {
             profilePic: profilePicUrl,
             createdAt: new Date()
         });
+
+        // Trigger welcome email using Firebase Extension
+        try {
+            await addDoc(mail, {
+                to: [email],
+                message: {
+                    subject: 'Welcome to Our Platform!',
+                    text: `Hello ${fullName},\n\nWelcome to our platform! Your account has been created successfully.\n\nAccount Details:\n- Email: ${email}\n- Gender: ${gender}\n- Age: ${age}\n\nThank you for joining us!`,
+                    html: `
+                        <h2>Welcome to Our Platform!</h2>
+                        <p>Hello <strong>${fullName}</strong>,</p>
+                        <p>Welcome to our platform! Your account has been created successfully.</p>
+                        <h3>Account Details:</h3>
+                        <ul>
+                            <li><strong>Email:</strong> ${email}</li>
+                            <li><strong>Gender:</strong> ${gender}</li>
+                            <li><strong>Age:</strong> ${age}</li>
+                        </ul>
+                        <p>Thank you for joining us!</p>
+                    `
+                }
+            });
+            
+            console.log("Welcome email queued successfully");
+        } catch (emailError) {
+            console.error("Error queuing welcome email:", emailError);
+            // Don't fail user creation if email fails
+        }
        
         res.status(201).json({
             message: "User added successfully",

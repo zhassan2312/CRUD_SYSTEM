@@ -12,6 +12,7 @@
     "start": "node ./src/server.js"
   },
   "dependencies": {
+    "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
     "@google-cloud/storage": "^7.16.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
