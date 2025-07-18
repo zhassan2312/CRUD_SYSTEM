@@ -25,7 +25,7 @@ const upload = multer({
 router.post('/register', upload.single('profilePic'), registerUser);
 router.post('/login', loginUser);
 router.get('/checkAuth',checkAuth);
-router.put('/resetPassword/:id', resetPassword);
+router.put('/resetPassword', resetPassword);
 router.post('/verifyEmail', verifyEmail);
 router.post('/resendVerificationEmail', resendVerificationEmail);
 router.get('/getUser/:id', getUser);

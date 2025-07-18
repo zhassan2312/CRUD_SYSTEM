@@ -216,10 +216,10 @@ const useUserStore = create((set, get) => ({
         }
     },
     
-    resetPassword: async (userId, newPassword) => {
+    resetPassword: async (email, newPassword) => {
         set({ loading: true, error: null });
         try {
-            await api.put(`/resetPassword/${userId}`, { newPassword });
+            await api.put(`/resetPassword`, { email, newPassword });
             set({ loading: false });
             return { success: true, message: 'Password reset successfully!' };
         } catch (error) {

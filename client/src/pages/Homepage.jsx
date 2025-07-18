@@ -184,6 +184,44 @@ const Homepage = () => {
                     <span className="font-medium">Gender:</span>
                     <span className="ml-2 text-gray-600">{user.gender || 'Not provided'}</span>
                   </div>
+                  <div>
+                    <span className="font-medium">Account Created:</span>
+                    <span className="ml-2 text-gray-600">
+                      {user.createdAt ?
+                        (() => {
+                          try {
+                            const date = typeof user.createdAt === 'string' || typeof user.createdAt === 'number'
+                              ? new Date(user.createdAt)
+                              : user.createdAt?.seconds
+                                ? new Date(user.createdAt.seconds * 1000)
+                                : null;
+                            return date && !isNaN(date.getTime()) ? date.toLocaleString() : 'Unknown';
+                          } catch {
+                            return 'Unknown';
+                          }
+                        })()
+                        : 'Unknown'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium">Last Login:</span>
+                    <span className="ml-2 text-gray-600">
+                      {user.lastLoginAt ?
+                        (() => {
+                          try {
+                            const date = typeof user.lastLoginAt === 'string' || typeof user.lastLoginAt === 'number'
+                              ? new Date(user.lastLoginAt)
+                              : user.lastLoginAt?.seconds
+                                ? new Date(user.lastLoginAt.seconds * 1000)
+                                : null;
+                            return date && !isNaN(date.getTime()) ? date.toLocaleString() : 'Unknown';
+                          } catch {
+                            return 'Unknown';
+                          }
+                        })()
+                        : 'Unknown'}
+                    </span>
+                  </div>
                 </div>
               </div>
 

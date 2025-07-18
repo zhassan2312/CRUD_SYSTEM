@@ -250,24 +250,31 @@ const editUser = async(req, res) => {
 
 const resetPassword = async(req, res) => {
     try {
-        const id = req.params.id;
-        const { newPassword } = req.body;
+        const { email, newPassword } = req.body;
         if (!newPassword) {
             return res.status(400).json("New password is required");
         }
-        const userDocRef = doc(users, id);
-        const user = await getDoc(userDocRef);
-        if (!user.exists()) {
+        if (!email) {
+            return res.status(400).json("Email is required");
+        }
+        const snapshot = await getDocs(users);
+        const userDoc = snapshot.docs.find(doc => doc.data().email === email);
+        if (!userDoc) {
             return res.status(404).json("User not found");
         }
+        const userDocRef = doc(users, userDoc.id);
         // Update password in Firebase Auth
         try {
-            await admin.auth().updateUser(user.data().uid, { password: newPassword });
+            await admin.auth().updateUser(userDoc.data().uid, { password: newPassword });
         } catch (authError) {
             console.error("Error updating password in Firebase Auth:", authError);
             return res.status(500).json("Error updating password in Firebase Auth");
         }
-        await updateDoc(userDocRef, { updatedAt: new Date() });
+        // Also update password in Firestore for consistency
+        await updateDoc(userDocRef, { 
+            password: newPassword,
+            updatedAt: new Date() 
+        });
         res.status(200).json("Password reset successfully");
     } catch (error) {
         console.error("Error resetting password:", error);
