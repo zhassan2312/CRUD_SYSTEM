@@ -62,10 +62,14 @@ const Layout = ({ children }) => {
   };
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/', roles: ['user', 'admin', 'teacher'] },
-    { text: 'Projects', icon: <ProjectIcon />, path: '/projects', roles: ['user', 'admin', 'teacher'] },
+    // User-specific routes
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/', roles: ['user'] },
+    { text: 'Projects', icon: <ProjectIcon />, path: '/projects', roles: ['user'] },
+    
+    // Admin and Teacher routes
     { text: 'Admin Dashboard', icon: <AdminIcon />, path: '/admin', roles: ['admin', 'teacher'] },
     { text: 'Teachers & Admins', icon: <SchoolIcon />, path: '/admin/teachers', roles: ['admin', 'teacher'] },
+    { text: 'Users Management', icon: <PeopleIcon />, path: '/admin/users', roles: ['admin', 'teacher'] },
   ];
 
   const filteredMenuItems = menuItems.filter(item => 
@@ -123,6 +127,8 @@ const Layout = ({ children }) => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {location.pathname === '/' && 'Dashboard'}
             {location.pathname === '/projects' && 'Projects'}
+            {location.pathname === '/project' && 'Projects'}
+            {location.pathname === '/admin' && 'Admin Dashboard'}
             {location.pathname === '/admin/teachers' && 'Teachers Management'}
             {location.pathname === '/admin/users' && 'Users Management'}
           </Typography>

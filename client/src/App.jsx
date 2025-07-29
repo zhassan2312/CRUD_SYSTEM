@@ -8,6 +8,8 @@ import { theme } from './theme/theme';
 import useUserStore from './store/useUserStore';
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import RoleBasedRoute from './components/RoleBasedRoute';
+import RoleBasedRedirect from './components/RoleBasedRedirect';
 import LoadingScreen from './components/LoadingScreen';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -46,55 +48,62 @@ const App = () => {
         {user ? (
           <Layout>
             <Routes>
+              {/* User Dashboard - Only for regular users */}
               <Route 
                 path="/" 
                 element={
-                  <ProtectedRoute>
+                  <RoleBasedRoute allowedRoles={['user']}>
                     <Dashboard />
-                  </ProtectedRoute>
+                  </RoleBasedRoute>
                 } 
               />
+              
+              {/* Projects - Only for regular users */}
               <Route 
                 path="/projects" 
                 element={
-                  <ProtectedRoute>
+                  <RoleBasedRoute allowedRoles={['user']}>
                     <Projects />
-                  </ProtectedRoute>
+                  </RoleBasedRoute>
                 } 
               />
               <Route 
                 path="/project" 
                 element={
-                  <ProtectedRoute>
+                  <RoleBasedRoute allowedRoles={['user']}>
                     <Projects />
-                  </ProtectedRoute>
+                  </RoleBasedRoute>
                 } 
               />
+              
+              {/* Admin Routes - Only for admin and teacher roles */}
               <Route 
                 path="/admin" 
                 element={
-                  <ProtectedRoute allowedRoles={['admin', 'teacher']}>
+                  <RoleBasedRoute minRoleLevel={2} allowedRoles={['admin', 'teacher']}>
                     <AdminDashboard />
-                  </ProtectedRoute>
+                  </RoleBasedRoute>
                 } 
               />
               <Route 
                 path="/admin/teachers" 
                 element={
-                  <ProtectedRoute allowedRoles={['admin', 'teacher']}>
+                  <RoleBasedRoute minRoleLevel={2} allowedRoles={['admin', 'teacher']}>
                     <AdminTeachers />
-                  </ProtectedRoute>
+                  </RoleBasedRoute>
                 } 
               />
               <Route 
                 path="/admin/users" 
                 element={
-                  <ProtectedRoute allowedRoles={['admin', 'teacher']}>
+                  <RoleBasedRoute allowedRoles={['admin', 'teacher']}>
                     <AdminUsers />
-                  </ProtectedRoute>
+                  </RoleBasedRoute>
                 } 
               />
-              <Route path="*" element={<Navigate to="/" />} />
+              
+              {/* Fallback route - redirect based on role */}
+              <Route path="*" element={<RoleBasedRedirect />} />
             </Routes>
           </Layout>
         ) : (

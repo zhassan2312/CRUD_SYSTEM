@@ -1,5 +1,6 @@
 import {create} from 'zustand';
 import api from '../lib/axios';
+import authMiddleware from '../middleware/authMiddleware';
 
 const useUserStore = create((set, get) => ({
     user: null,
@@ -231,30 +232,46 @@ const useUserStore = create((set, get) => ({
     },
     
     initializeAuth: () => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            set({ token });
-            // Validate token and fetch user from backend
-            api.get('/checkAuth')
-                .then(response => {
-                    // Ensure user has a role (default to 'user' if not set)
-                    const userData = {
-                        ...response.data,
-                        role: response.data.role || 'user'
-                    };
-                    set({ user: userData });
-                    localStorage.setItem('user', JSON.stringify(userData));
-                })
-                .catch(error => {
-                    console.error('Auth check failed:', error);
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    delete api.defaults.headers.common['Authorization'];
-                    set({ user: null, token: null });
-                });
-        } else {
-            set({ user: null, token: null });
+        set({ loading: true });
+        
+        const result = authMiddleware.initializeAuth();
+        result.then(({ success, user, error }) => {
+            if (success && user) {
+                set({ user, token: localStorage.getItem('token'), loading: false });
+            } else {
+                console.error('Auth initialization failed:', error);
+                authMiddleware.clearAuthData();
+                set({ user: null, token: null, loading: false });
+            }
+        }).catch(error => {
+            console.error('Auth initialization error:', error);
+            set({ user: null, token: null, loading: false });
+        });
+    },
+
+    // Check user permissions for specific roles
+    hasPermission: (requiredRoles) => {
+        const { user } = get();
+        if (!user) return false;
+        
+        return authMiddleware.hasPermission(user.role, requiredRoles);
+    },
+
+    // Refresh user data from backend
+    refreshUserData: async () => {
+        set({ loading: true });
+        try {
+            const result = await authMiddleware.refreshUserData();
+            if (result.success) {
+                set({ user: result.user, loading: false });
+                return { success: true };
+            } else {
+                set({ error: result.error, loading: false });
+                return { success: false, error: result.error };
+            }
+        } catch (error) {
+            set({ error: error.message, loading: false });
+            return { success: false, error: error.message };
         }
     },
 
