@@ -43,6 +43,7 @@ import * as yup from 'yup';
 import { toast } from 'react-toastify';
 import useProjectStore from '../store/useProjectStore';
 import useTeacherStore from '../store/useTeacherStore';
+import ProjectStatusBadge from '../components/ProjectStatusBadge';
 
 // Validation schema
 const projectSchema = yup.object({
@@ -271,9 +272,8 @@ const Projects = () => {
                   </Typography>
 
                   <Box sx={{ mb: 2 }}>
-                    <Chip
-                      label={project.status || 'In Progress'}
-                      color={getStatusColor(project.status)}
+                    <ProjectStatusBadge 
+                      status={project.status || 'pending'} 
                       size="small"
                     />
                   </Box>

@@ -9,7 +9,8 @@ import {
   deleteDoc, 
   query, 
   where, 
-  orderBy 
+  orderBy,
+  mail
 } from '../config/firebase.config.js';
 import { 
   getStorage, 
@@ -298,5 +299,258 @@ export const deleteProject = async (req, res) => {
   } catch (error) {
     console.error('Error deleting project:', error);
     res.status(500).json({ message: 'Failed to delete project' });
+  }
+};
+
+// Project Status Management Functions
+
+export const updateProjectStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, feedback, reviewedBy } = req.body;
+    const userRole = req.user.role;
+
+    // Check if user has permission to update project status
+    if (!['admin', 'teacher'].includes(userRole)) {
+      return res.status(403).json({ message: 'Admin or teacher access required' });
+    }
+
+    // Validate status
+    const validStatuses = ['pending', 'under-review', 'approved', 'rejected', 'revision-required'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    // Get existing project
+    const projectDoc = await getDoc(doc(db, 'projects', id));
+    if (!projectDoc.exists()) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    const existingProject = projectDoc.data();
+
+    // Create status history entry
+    const statusUpdate = {
+      status,
+      feedback: feedback || '',
+      reviewedBy: req.user.uid,
+      reviewerName: req.user.fullName || req.user.email,
+      reviewerRole: userRole,
+      timestamp: new Date(),
+      previousStatus: existingProject.status || 'pending'
+    };
+
+    // Update project status and add to history
+    const updateData = {
+      status,
+      lastReviewedAt: new Date(),
+      lastReviewedBy: req.user.uid,
+      reviewerName: req.user.fullName || req.user.email,
+      statusHistory: [...(existingProject.statusHistory || []), statusUpdate],
+      updatedAt: new Date()
+    };
+
+    // Add feedback if provided
+    if (feedback) {
+      updateData.lastFeedback = feedback;
+    }
+
+    await updateDoc(doc(db, 'projects', id), updateData);
+
+    // Send email notification to project creator
+    try {
+      await sendStatusChangeNotification(existingProject, status, feedback, req.user);
+    } catch (emailError) {
+      console.error('Error sending status change notification:', emailError);
+    }
+
+    res.json({ 
+      message: 'Project status updated successfully',
+      project: {
+        id,
+        ...existingProject,
+        ...updateData
+      }
+    });
+  } catch (error) {
+    console.error('Error updating project status:', error);
+    res.status(500).json({ message: 'Failed to update project status' });
+  }
+};
+
+export const getProjectsForReview = async (req, res) => {
+  try {
+    const userRole = req.user.role;
+
+    // Check if user has permission to review projects
+    if (!['admin', 'teacher'].includes(userRole)) {
+      return res.status(403).json({ message: 'Admin or teacher access required' });
+    }
+
+    const { status = 'all', page = 1, limit = 10 } = req.query;
+
+    // Build query based on status filter
+    let q;
+    if (status === 'all') {
+      q = query(
+        collection(db, 'projects'),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      q = query(
+        collection(db, 'projects'),
+        where('status', '==', status),
+        orderBy('createdAt', 'desc')
+      );
+    }
+
+    const querySnapshot = await getDocs(q);
+    const projects = [];
+
+    querySnapshot.forEach((doc) => {
+      projects.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    // Simple pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedProjects = projects.slice(startIndex, endIndex);
+
+    res.json({
+      projects: paginatedProjects,
+      totalProjects: projects.length,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(projects.length / limit),
+      hasNextPage: endIndex < projects.length,
+      hasPrevPage: page > 1
+    });
+  } catch (error) {
+    console.error('Error fetching projects for review:', error);
+    res.status(500).json({ message: 'Failed to fetch projects for review' });
+  }
+};
+
+export const getProjectStatusHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userRole = req.user.role;
+    const userId = req.user.uid;
+
+    // Get project
+    const projectDoc = await getDoc(doc(db, 'projects', id));
+    if (!projectDoc.exists()) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    const project = projectDoc.data();
+
+    // Check if user has permission to view status history
+    if (!['admin', 'teacher'].includes(userRole) && project.createdBy !== userId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const statusHistory = project.statusHistory || [];
+
+    res.json({
+      projectId: id,
+      projectTitle: project.title,
+      currentStatus: project.status || 'pending',
+      statusHistory: statusHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    });
+  } catch (error) {
+    console.error('Error fetching project status history:', error);
+    res.status(500).json({ message: 'Failed to fetch project status history' });
+  }
+};
+
+// Helper function to send status change notifications
+const sendStatusChangeNotification = async (project, newStatus, feedback, reviewer) => {
+  try {
+    // Get project creator details
+    const creatorQuery = query(
+      collection(db, 'users'),
+      where('uid', '==', project.createdBy)
+    );
+    const creatorSnapshot = await getDocs(creatorQuery);
+    
+    if (creatorSnapshot.empty) {
+      console.warn('Project creator not found for notification');
+      return;
+    }
+
+    const creator = creatorSnapshot.docs[0].data();
+    
+    // Prepare email content based on status
+    let subject, htmlContent;
+    
+    switch (newStatus) {
+      case 'approved':
+        subject = `✅ Your project "${project.title}" has been approved!`;
+        htmlContent = `
+          <h2>Congratulations! Your project has been approved</h2>
+          <p>Dear <strong>${creator.fullName}</strong>,</p>
+          <p>Great news! Your project "<strong>${project.title}</strong>" has been approved by ${reviewer.fullName || reviewer.email}.</p>
+          ${feedback ? `<p><strong>Reviewer's Comments:</strong><br/>${feedback}</p>` : ''}
+          <p>You can now proceed with your project implementation.</p>
+          <p>Best regards,<br/>The Academic Team</p>
+        `;
+        break;
+        
+      case 'rejected':
+        subject = `❌ Your project "${project.title}" requires attention`;
+        htmlContent = `
+          <h2>Project Review Update</h2>
+          <p>Dear <strong>${creator.fullName}</strong>,</p>
+          <p>Your project "<strong>${project.title}</strong>" has been reviewed by ${reviewer.fullName || reviewer.email}.</p>
+          <p><strong>Status:</strong> Rejected</p>
+          ${feedback ? `<p><strong>Feedback:</strong><br/>${feedback}</p>` : ''}
+          <p>Please review the feedback and consider resubmitting with the suggested improvements.</p>
+          <p>Best regards,<br/>The Academic Team</p>
+        `;
+        break;
+        
+      case 'revision-required':
+        subject = `📝 Revision required for your project "${project.title}"`;
+        htmlContent = `
+          <h2>Project Revision Required</h2>
+          <p>Dear <strong>${creator.fullName}</strong>,</p>
+          <p>Your project "<strong>${project.title}</strong>" has been reviewed by ${reviewer.fullName || reviewer.email}.</p>
+          <p><strong>Status:</strong> Revision Required</p>
+          ${feedback ? `<p><strong>Feedback:</strong><br/>${feedback}</p>` : ''}
+          <p>Please make the suggested revisions and resubmit your project.</p>
+          <p>Best regards,<br/>The Academic Team</p>
+        `;
+        break;
+        
+      case 'under-review':
+        subject = `🔍 Your project "${project.title}" is under review`;
+        htmlContent = `
+          <h2>Project Under Review</h2>
+          <p>Dear <strong>${creator.fullName}</strong>,</p>
+          <p>Your project "<strong>${project.title}</strong>" is now under review by ${reviewer.fullName || reviewer.email}.</p>
+          <p>We'll notify you once the review is complete.</p>
+          <p>Best regards,<br/>The Academic Team</p>
+        `;
+        break;
+        
+      default:
+        return; // Don't send notification for other status changes
+    }
+
+    // Send email using Firebase Extensions
+    await addDoc(mail, {
+      to: [creator.email],
+      message: {
+        subject,
+        html: htmlContent
+      }
+    });
+
+  } catch (error) {
+    console.error('Error sending status change notification:', error);
+    throw error;
   }
 };

@@ -21,6 +21,7 @@ import EmailVerification from './pages/EmailVerification';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminTeachers from './pages/admin/Teachers';
 import AdminUsers from './pages/admin/Users';
+import ProjectReview from './pages/admin/ProjectReview';
 
 const App = () => {
   const { initializeAuth, user } = useUserStore();
@@ -106,6 +107,14 @@ const App = () => {
                 element={
                   <RoleBasedRoute allowedRoles={['admin', 'teacher']}>
                     <AdminUsers />
+                  </RoleBasedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/projects" 
+                element={
+                  <RoleBasedRoute allowedRoles={['admin', 'teacher']}>
+                    <ProjectReview />
                   </RoleBasedRoute>
                 } 
               />

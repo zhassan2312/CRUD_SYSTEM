@@ -5,7 +5,10 @@ import {
   getAllProjects, 
   updateProject, 
   deleteProject, 
-  getProjectById 
+  getProjectById,
+  updateProjectStatus,
+  getProjectsForReview,
+  getProjectStatusHistory
 } from '../controllers/project.controller.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 
@@ -28,5 +31,15 @@ router.put('/:id', authenticateToken, updateProject);
 
 // Delete project
 router.delete('/:id', authenticateToken, deleteProject);
+
+// Project Status Management Routes
+// Get projects for review (admin/teacher only)
+router.get('/review/list', authenticateToken, getProjectsForReview);
+
+// Update project status (admin/teacher only)
+router.put('/:id/status', authenticateToken, updateProjectStatus);
+
+// Get project status history
+router.get('/:id/status-history', authenticateToken, getProjectStatusHistory);
 
 export default router;

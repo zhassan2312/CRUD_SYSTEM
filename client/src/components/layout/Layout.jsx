@@ -25,6 +25,7 @@ import {
   FolderOpen as ProjectIcon,
   School as SchoolIcon,
   AdminPanelSettings as AdminIcon,
+  Assignment as ReviewIcon,
   AccountCircle,
   Logout,
   Settings,
@@ -68,6 +69,7 @@ const Layout = ({ children }) => {
     
     // Admin and Teacher routes
     { text: 'Admin Dashboard', icon: <AdminIcon />, path: '/admin', roles: ['admin', 'teacher'] },
+    { text: 'Project Review', icon: <ReviewIcon />, path: '/admin/projects', roles: ['admin', 'teacher'] },
     { text: 'Teachers & Admins', icon: <SchoolIcon />, path: '/admin/teachers', roles: ['admin', 'teacher'] },
     { text: 'Users Management', icon: <PeopleIcon />, path: '/admin/users', roles: ['admin', 'teacher'] },
   ];
@@ -127,8 +129,9 @@ const Layout = ({ children }) => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {location.pathname === '/' && 'Dashboard'}
             {location.pathname === '/projects' && 'Projects'}
-            {location.pathname === '/project' && 'Projects'}
+            {location.pathname === '/project' && 'Add Project'}
             {location.pathname === '/admin' && 'Admin Dashboard'}
+            {location.pathname === '/admin/projects' && 'Project Review'}
             {location.pathname === '/admin/teachers' && 'Teachers Management'}
             {location.pathname === '/admin/users' && 'Users Management'}
           </Typography>

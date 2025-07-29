@@ -190,8 +190,22 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           </Grid>
-          {user?.role === 'admin' && (
+          {user?.role === 'admin' || user?.role === 'teacher' ? (
             <>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Card 
+                  sx={{ cursor: 'pointer', '&:hover': { boxShadow: 4 } }}
+                  onClick={() => navigate('/admin/projects')}
+                >
+                  <CardContent sx={{ textAlign: 'center' }}>
+                    <ProjectIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
+                    <Typography variant="h6">Review Projects</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Review student submissions
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Card 
                   sx={{ cursor: 'pointer', '&:hover': { boxShadow: 4 } }}
@@ -221,7 +235,7 @@ const Dashboard = () => {
                 </Card>
               </Grid>
             </>
-          )}
+          ) : null}
         </Grid>
       </Box>
 
