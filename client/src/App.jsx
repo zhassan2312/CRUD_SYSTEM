@@ -51,13 +51,15 @@ const App = () => {
         {user ? (
           <Layout>
             <Routes>
-              {/* User Dashboard - Only for regular users */}
+              {/* Home Route - Redirect based on role */}
               <Route 
                 path="/" 
                 element={
-                  <RoleBasedRoute allowedRoles={['user']}>
-                    <Dashboard />
-                  </RoleBasedRoute>
+                  user?.role === 'admin' || user?.role === 'teacher' ? 
+                    <Navigate to="/admin" replace /> :
+                    <RoleBasedRoute allowedRoles={['user']}>
+                      <Dashboard />
+                    </RoleBasedRoute>
                 } 
               />
               
@@ -89,7 +91,7 @@ const App = () => {
               <Route 
                 path="/admin" 
                 element={
-                  <RoleBasedRoute minRoleLevel={2} allowedRoles={['admin', 'teacher']}>
+                  <RoleBasedRoute allowedRoles={['admin', 'teacher']}>
                     <AdminDashboard />
                   </RoleBasedRoute>
                 } 
@@ -97,7 +99,7 @@ const App = () => {
               <Route 
                 path="/admin/teachers" 
                 element={
-                  <RoleBasedRoute minRoleLevel={2} allowedRoles={['admin', 'teacher']}>
+                  <RoleBasedRoute allowedRoles={['admin', 'teacher']}>
                     <AdminTeachers />
                   </RoleBasedRoute>
                 } 

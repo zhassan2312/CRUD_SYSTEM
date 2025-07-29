@@ -26,7 +26,7 @@ class AuthMiddleware {
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
         // Validate token with backend
-        const response = await api.get('/checkAuth');
+        const response = await api.get('/user/checkAuth');
         const freshUserData = {
           ...response.data,
           role: response.data.role || 'user'
@@ -40,6 +40,7 @@ class AuthMiddleware {
       }
     } catch (error) {
       console.error('Auth initialization failed:', error);
+      // Clear invalid token data
       this.clearAuthData();
       return { success: false, error: error.message };
     }
@@ -57,7 +58,7 @@ class AuthMiddleware {
         return { success: true, role: this.roleCache };
       }
 
-      const response = await api.get(`/getUser/${userId}`);
+      const response = await api.get(`/user/getUser/${userId}`);
       const role = response.data.role || 'user';
       
       // Update cache
@@ -144,7 +145,7 @@ class AuthMiddleware {
    */
   async refreshUserData() {
     try {
-      const response = await api.get('/checkAuth');
+      const response = await api.get('/user/checkAuth');
       const userData = {
         ...response.data,
         role: response.data.role || 'user'

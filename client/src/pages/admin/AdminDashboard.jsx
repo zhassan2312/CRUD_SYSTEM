@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Grid,
@@ -36,11 +36,12 @@ import useStatsStore from '../../store/useStatsStore';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { user } = useUserStore();
+  const { user, loading: authLoading, users, fetchUsers } = useUserStore();
   const { projects, fetchProjects, loading: projectLoading } = useProjectStore();
   const { teachers, fetchTeachers, loading: teacherLoading } = useTeacherStore();
-  const { users, fetchUsers, loading: userLoading } = useUserStore();
   const { stats: adminStats, fetchAdminStats, loading: statsLoading } = useStatsStore();
+
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   const [localStats, setLocalStats] = useState({
     totalProjects: 0,
@@ -52,13 +53,15 @@ const AdminDashboard = () => {
   });
 
   useEffect(() => {
-    if (user?.role === 'admin') {
+    // Only fetch data if user is authenticated and is an admin
+    if (user?.role === 'admin' && !hasInitialized) {
+      setHasInitialized(true);
       fetchProjects();
       fetchTeachers();
       fetchUsers();
       fetchAdminStats();
     }
-  }, [user]);
+  }, [user, hasInitialized]);
 
   useEffect(() => {
     // Use admin stats if available, otherwise calculate locally
@@ -99,7 +102,7 @@ const AdminDashboard = () => {
       icon: <ProjectIcon />,
       color: '#1976d2',
       description: `${localStats.completedProjects} completed, ${localStats.pendingProjects} pending`,
-      onClick: () => navigate('/projects'),
+      onClick: () => navigate('/admin/projects'),
     },
     {
       title: 'Teachers',
@@ -127,10 +130,50 @@ const AdminDashboard = () => {
     },
   ];
 
-  const loading = projectLoading || teacherLoading || userLoading || statsLoading;
+  const loading = projectLoading || teacherLoading || authLoading || statsLoading;
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <Container maxWidth="lg">
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+          <Typography variant="body1" sx={{ ml: 2 }}>
+            Verifying permissions...
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
+
+  // If not authenticated at all, show login prompt
+  if (!user) {
+    return (
+      <Container maxWidth="lg">
+        <Alert severity="warning" sx={{ mt: 4 }}>
+          You must be logged in to access the admin dashboard.
+          <Box sx={{ mt: 2 }}>
+            <button 
+              onClick={() => navigate('/login')}
+              style={{ 
+                padding: '8px 16px', 
+                backgroundColor: '#1976d2', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px', 
+                cursor: 'pointer' 
+              }}
+            >
+              Go to Login
+            </button>
+          </Box>
+        </Alert>
+      </Container>
+    );
+  }
 
   // Check if user is admin
-  if (user?.role !== 'admin') {
+  if (user.role !== 'admin') {
     return (
       <Container maxWidth="lg">
         <Alert severity="error">
@@ -159,7 +202,7 @@ const AdminDashboard = () => {
       ) : (
         <Grid container spacing={3} sx={{ mb: 4 }}>
           {statsCards.map((stat, index) => (
-            <Grid key={index} xs={12} sm={6} md={3}>
+            <Grid key={index} size={{ xs: 12, sm: 6, md: 3 }}>
               <Card 
                 sx={{ 
                   height: '100%', 
@@ -209,7 +252,7 @@ const AdminDashboard = () => {
           <Typography variant="h6">
             Recent Projects
           </Typography>
-          <IconButton onClick={() => navigate('/projects')} color="primary">
+          <IconButton onClick={() => navigate('/admin/projects')} color="primary">
             <ViewIcon />
           </IconButton>
         </Box>
@@ -277,7 +320,7 @@ const AdminDashboard = () => {
                     <TableCell align="center">
                       <IconButton 
                         size="small" 
-                        onClick={() => navigate('/projects')}
+                        onClick={() => navigate('/admin/projects')}
                         color="primary"
                       >
                         <ViewIcon />
@@ -315,7 +358,7 @@ const AdminDashboard = () => {
         ) : teachers.length > 0 ? (
           <Grid container spacing={2}>
             {teachers.slice(0, 6).map((teacher) => (
-              <Grid key={teacher.id} xs={12} sm={6} md={4}>
+              <Grid key={teacher.id} size={{ xs: 12, sm: 6, md: 4 }}>
                 <Card sx={{ p: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Avatar 

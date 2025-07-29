@@ -1,6 +1,7 @@
 import {users,admin, addDoc,mail, doc, getDoc, getDocs, deleteDoc, updateDoc} from '../config/firebase.config.js';
 import jwt from 'jsonwebtoken';
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
+import env from '../config/env.config.js';
+const JWT_SECRET = env.JWT_SECRET;
 import { uploadFileAndGetUrl } from '../config/gcloud.config.js';
 
 const registerUser = async(req, res) => {
@@ -148,7 +149,12 @@ const loginUser = async(req, res) => {
         }
 
         // Issue JWT token
-        const userData = { id: userDoc.id, uid: userDoc.data().uid, email: userDoc.data().email };
+        const userData = { 
+            id: userDoc.id, 
+            uid: userDoc.data().uid, 
+            email: userDoc.data().email,
+            role: userDoc.data().role || 'user' // Include role in token
+        };
         const token = jwt.sign(userData, JWT_SECRET, { expiresIn: '2h' });
         res.status(200).json({
             message: "Login successful",

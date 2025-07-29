@@ -128,8 +128,7 @@ export const getUserProjects = async (req, res) => {
     
     const q = query(
       collection(db, 'projects'),
-      where('createdBy', '==', userId),
-      orderBy('createdAt', 'desc')
+      where('createdBy', '==', userId)
     );
     
     const querySnapshot = await getDocs(q);
@@ -140,6 +139,13 @@ export const getUserProjects = async (req, res) => {
         id: doc.id,
         ...doc.data()
       });
+    });
+
+    // Sort by createdAt in JavaScript instead of Firestore
+    projects.sort((a, b) => {
+      const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+      const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+      return bDate - aDate; // Descending order
     });
     
     res.json(projects);

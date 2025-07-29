@@ -13,7 +13,7 @@ const useUserStore = create((set, get) => ({
     fetchUsers: async () => {
         set({ loading: true, error: null });
         try {
-            const response = await api.get('/getAllUsers');
+            const response = await api.get('/user/getAllUsers');
             set({ users: response.data, loading: false });
         } catch (error) {
             set({ error: error.message, loading: false });
@@ -35,14 +35,14 @@ const useUserStore = create((set, get) => ({
                 formData.append('profilePic', user.profilePic);
             }
 
-            await api.post('/register', formData, {
+            await api.post('/user/register', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             });
 
             // Refresh the user list after adding
-            const response = await api.get('/getAllUsers');
+            const response = await api.get('/user/getAllUsers');
             set({ users: response.data, loading: false });
         } catch (error) {
             set({ error: error.message, loading: false });
@@ -51,7 +51,7 @@ const useUserStore = create((set, get) => ({
     getUser: async (id) => {
         set({ loading: true, error: null });
         try {
-            const response = await api.get(`/getUser/${id}`);
+            const response = await api.get(`/user/getUser/${id}`);
             set({ user: response.data, loading: false });
         } catch (error) {
             set({ error: error.message, loading: false });
@@ -73,14 +73,14 @@ const useUserStore = create((set, get) => ({
                 formData.append('profilePic', user.profilePic);
             }
 
-            await api.put(`/updateUser/${id}`, formData, {
+            await api.put(`/user/updateUser/${id}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             });
 
             // Refresh the user list after updating
-            const response = await api.get('/getAllUsers');
+            const response = await api.get('/user/getAllUsers');
             set({ users: response.data, loading: false });
         } catch (error) {
             set({ error: error.message, loading: false });
@@ -89,7 +89,7 @@ const useUserStore = create((set, get) => ({
     deleteUser: async (id) => {
         set({ loading: true, error: null });
         try {
-            await api.delete(`/deleteUser/${id}`);
+            await api.delete(`/user/deleteUser/${id}`);
             const { user } = get();
             // If deleting current user, logout
             if (user?.id === id) {
@@ -98,7 +98,7 @@ const useUserStore = create((set, get) => ({
                 set({ user: null, token: null });
             }
             // Refresh the user list after deleting
-            const response = await api.get('/getAllUsers');
+            const response = await api.get('/user/getAllUsers');
             set({ users: response.data, loading: false });
             return { success: true, message: 'User deleted successfully!' };
         } catch (error) {
@@ -110,9 +110,10 @@ const useUserStore = create((set, get) => ({
     login: async (email, password) => {
         set({ loading: true, error: null });
         try {
-            const response = await api.post('/login', { email, password });
+            const response = await api.post('/user/login', { email, password });
             if (response.data.token) {
                 localStorage.setItem('token', response.data.token);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
                 api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
                 set({ user: response.data.user, token: response.data.token, loading: false });
                 return { success: true, user: response.data.user };
@@ -131,12 +132,13 @@ const useUserStore = create((set, get) => ({
         try {
             const { user } = get();
             if (user?.id) {
-                await api.get(`/logout/${user.id}`);
+                await api.get(`/user/logout/${user.id}`);
             }
         } catch (error) {
             console.error('Logout error:', error);
         } finally {
             localStorage.removeItem('token');
+            localStorage.removeItem('user');
             delete api.defaults.headers.common['Authorization'];
             set({ user: null, token: null });
         }
@@ -157,7 +159,7 @@ const useUserStore = create((set, get) => ({
                 formData.append('profilePic', userData.profilePic);
             }
 
-            const response = await api.post('/register', formData, {
+            const response = await api.post('/user/register', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -175,7 +177,7 @@ const useUserStore = create((set, get) => ({
     verifyEmail: async (email) => {
         set({ loading: true, error: null });
         try {
-            const response = await api.post('/verifyEmail', { email });
+            const response = await api.post('/user/verifyEmail', { email });
             
             if (response.data.user) {
                 set({ user: response.data.user });
@@ -194,7 +196,7 @@ const useUserStore = create((set, get) => ({
     resendVerificationEmail: async (email) => {
         set({ loading: true, error: null });
         try {
-            const response = await api.post('/resendVerificationEmail', { email });
+            const response = await api.post('/user/resendVerificationEmail', { email });
             set({ loading: false });
             return { success: true, message: response.data };
         } catch (error) {
@@ -208,7 +210,7 @@ const useUserStore = create((set, get) => ({
     syncEmailVerification: async (email) => {
         set({ loading: true, error: null });
         try {
-            const response = await api.post('/syncEmailVerification', { email });
+            const response = await api.post('/user/syncEmailVerification', { email });
             set({ loading: false });
             return { success: true, message: response.data };
         } catch (error) {
@@ -221,7 +223,7 @@ const useUserStore = create((set, get) => ({
     resetPassword: async (email, newPassword) => {
         set({ loading: true, error: null });
         try {
-            await api.put(`/resetPassword`, { email, newPassword });
+            await api.put(`/user/resetPassword`, { email, newPassword });
             set({ loading: false });
             return { success: true, message: 'Password reset successfully!' };
         } catch (error) {
@@ -279,7 +281,7 @@ const useUserStore = create((set, get) => ({
     updateUserRole: async (userId, newRole) => {
         set({ loading: true, error: null });
         try {
-            const response = await api.put(`/updateUserRole/${userId}`, { role: newRole });
+                        const response = await api.put(`/user/updateUserRole/${userId}`, { role: newRole });
             
             // Update the users array in state
             const { users } = get();
