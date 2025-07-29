@@ -30,4 +30,4 @@ const db = getFirestore(app);
 const users = collection(db, 'users');
 const mail = collection(db, 'mail');
 
-export { app,admin, db, users, mail, addDoc, setDoc, doc, getDoc, getDocs, deleteDoc, updateDoc };
+export { app, admin, db, users, mail, addDoc, setDoc, doc, getDoc, getDocs, deleteDoc, updateDoc };

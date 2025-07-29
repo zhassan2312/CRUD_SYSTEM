@@ -53,6 +53,7 @@ const registerUser = async(req, res) => {
             gender,
             age,
             profilePic: profilePicUrl,
+            role: 'user', // Default role is 'user'
             emailVerified: false, // Initially false
             createdAt: new Date()
         });
@@ -81,6 +82,7 @@ const registerUser = async(req, res) => {
                 email,
                 gender,
                 age,
+                role: 'user',
                 emailVerified: false, 
                 profilePic: profilePicUrl,
                 createdAt: new Date()
@@ -415,9 +417,27 @@ const checkAuth = async(req, res) => {
     }
 }
 
+const getAllUsers = async(req, res) => {
+    try {
+        const snapshot = await getDocs(users);
+        const usersList = [];
+        snapshot.forEach((doc) => {
+            usersList.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+        res.status(200).json(usersList);
+    } catch (error) {
+        console.error("Error getting all users:", error);
+        res.status(500).json("Error getting all users");
+    }
+}
+
 export {
   registerUser,
   getUser,
+  getAllUsers,
   loginUser,
   logoutUser,
   editUser,

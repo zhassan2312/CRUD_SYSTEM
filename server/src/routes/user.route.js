@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { registerUser, getUser, loginUser, checkAuth, logoutUser, editUser, resetPassword, verifyEmail, resendVerificationEmail, deleteUser } from "../controllers/user.controller.js";
+import { registerUser, getUser, getAllUsers, loginUser, checkAuth, logoutUser, editUser, resetPassword, verifyEmail, resendVerificationEmail, deleteUser } from "../controllers/user.controller.js";
 import { users, admin, getDocs, doc, updateDoc } from "../config/firebase.config.js";
 
 const router = Router();
@@ -29,6 +29,7 @@ router.put('/resetPassword', resetPassword);
 router.post('/verifyEmail', verifyEmail);
 router.post('/resendVerificationEmail', resendVerificationEmail);
 router.get('/getUser/:id', getUser);
+router.get('/getAllUsers', getAllUsers);
 
 router.put('/updateUser/:id', upload.single('profilePic'), editUser);
 router.delete('/deleteUser/:id', deleteUser);
