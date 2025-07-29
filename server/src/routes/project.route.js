@@ -10,36 +10,36 @@ import {
   getProjectsForReview,
   getProjectStatusHistory
 } from '../controllers/project.controller.js';
-import { authenticateToken } from '../middleware/auth.middleware.js';
+import { authenticateToken, requireTeacherOrAdmin } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-// Create new project
+// Create new project (authenticated users)
 router.post('/', authenticateToken, createProject);
 
-// Get user's projects
+// Get user's own projects
 router.get('/user', authenticateToken, getUserProjects);
 
-// Get all projects (admin only)
-router.get('/', authenticateToken, getAllProjects);
-
-// Get project by ID
+// Get project by ID (project owner or admin/teacher)
 router.get('/:id', authenticateToken, getProjectById);
 
-// Update project
+// Update project (project owner only)
 router.put('/:id', authenticateToken, updateProject);
 
-// Delete project
+// Delete project (project owner only)
 router.delete('/:id', authenticateToken, deleteProject);
 
-// Project Status Management Routes
+// Admin/Teacher only routes
+// Get all projects (admin/teacher only)
+router.get('/', authenticateToken, requireTeacherOrAdmin, getAllProjects);
+
 // Get projects for review (admin/teacher only)
-router.get('/review/list', authenticateToken, getProjectsForReview);
+router.get('/review/list', authenticateToken, requireTeacherOrAdmin, getProjectsForReview);
 
 // Update project status (admin/teacher only)
-router.put('/:id/status', authenticateToken, updateProjectStatus);
+router.put('/:id/status', authenticateToken, requireTeacherOrAdmin, updateProjectStatus);
 
-// Get project status history
-router.get('/:id/status-history', authenticateToken, getProjectStatusHistory);
+// Get project status history (admin/teacher only)
+router.get('/:id/status-history', authenticateToken, requireTeacherOrAdmin, getProjectStatusHistory);
 
 export default router;

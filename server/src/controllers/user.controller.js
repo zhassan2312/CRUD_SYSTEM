@@ -1,5 +1,6 @@
 import {users,admin, addDoc,mail, doc, getDoc, getDocs, deleteDoc, updateDoc} from '../config/firebase.config.js';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import env from '../config/env.config.js';
 const JWT_SECRET = env.JWT_SECRET;
 import { uploadFileAndGetUrl } from '../config/gcloud.config.js';
@@ -33,6 +34,23 @@ const registerUser = async(req, res) => {
             return res.status(400).json("All fields are required");
         }
 
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json("Invalid email format");
+        }
+
+        // Check if user already exists
+        const snapshot = await getDocs(users);
+        const existingUser = snapshot.docs.find(doc => doc.data().email === email);
+        if (existingUser) {
+            return res.status(400).json("User with this email already exists");
+        }
+
+        // Hash password
+        const saltRounds = 12;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
         // Create user in Firebase Auth
         let userRecord;
         try {
@@ -46,12 +64,12 @@ const registerUser = async(req, res) => {
             return res.status(500).json("Error creating user in Firebase Auth");
         }
 
-        // Add user to Firestore
+        // Add user to Firestore with hashed password
         const docRef = await addDoc(users, {
             uid: userRecord.uid,
             fullName,
             email,
-            password,
+            password: hashedPassword, // Store hashed password
             gender,
             age,
             profilePic: profilePicUrl,
@@ -121,9 +139,17 @@ const loginUser = async(req, res) => {
         if (!email || !password) {
             return res.status(400).json("Email and password are required");
         }
+
+        // Find user by email
         const snapshot = await getDocs(users);
-        const userDoc = snapshot.docs.find(doc => doc.data().email === email && doc.data().password === password);
+        const userDoc = snapshot.docs.find(doc => doc.data().email === email);
         if (!userDoc) {
+            return res.status(401).json("Invalid email or password");
+        }
+
+        // Verify password using bcrypt
+        const isPasswordValid = await bcrypt.compare(password, userDoc.data().password);
+        if (!isPasswordValid) {
             return res.status(401).json("Invalid email or password");
         }
 
@@ -155,15 +181,32 @@ const loginUser = async(req, res) => {
             email: userDoc.data().email,
             role: userDoc.data().role || 'user' // Include role in token
         };
-        const token = jwt.sign(userData, JWT_SECRET, { expiresIn: '2h' });
+        const token = jwt.sign(userData, JWT_SECRET, { expiresIn: '24h' });
+        
+        // Set HTTP-only cookie
+        res.cookie('authToken', token, {
+            httpOnly: true,
+            secure: env.NODE_ENV === 'production', // Only use secure in production
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000, // 24 hours
+            path: '/'
+        });
+
+        // Return user data without password
+        const safeUserData = { 
+            id: userDoc.id, 
+            uid: userDoc.data().uid,
+            fullName: userDoc.data().fullName,
+            email: userDoc.data().email,
+            role: userDoc.data().role || 'user',
+            profilePic: userDoc.data().profilePic,
+            emailVerified: true,
+            createdAt: userDoc.data().createdAt
+        };
+
         res.status(200).json({
             message: "Login successful",
-            token,
-            user: { 
-                id: userDoc.id, 
-                ...userDoc.data(),
-                emailVerified: true // Make sure we return the updated status
-            }
+            user: safeUserData
         });
     } catch (error) {
         console.error("Error logging in user:", error);
@@ -172,8 +215,14 @@ const loginUser = async(req, res) => {
 }
 
 const logoutUser = async(req, res) => {
-    const id = req.params.id;
-    res.status(200).json("Logout successful");
+    // Clear the HTTP-only cookie
+    res.clearCookie('authToken', {
+        httpOnly: true,
+        secure: env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/'
+    });
+    res.status(200).json({ message: "Logout successful" });
 }
 
 const editUser = async(req, res) => {
@@ -266,12 +315,24 @@ const resetPassword = async(req, res) => {
         if (!email) {
             return res.status(400).json("Email is required");
         }
+
+        // Validate password strength
+        if (newPassword.length < 8) {
+            return res.status(400).json("Password must be at least 8 characters long");
+        }
+
         const snapshot = await getDocs(users);
         const userDoc = snapshot.docs.find(doc => doc.data().email === email);
         if (!userDoc) {
             return res.status(404).json("User not found");
         }
+        
         const userDocRef = doc(users, userDoc.id);
+        
+        // Hash the new password
+        const saltRounds = 12;
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+        
         // Update password in Firebase Auth
         try {
             await admin.auth().updateUser(userDoc.data().uid, { password: newPassword });
@@ -279,11 +340,13 @@ const resetPassword = async(req, res) => {
             console.error("Error updating password in Firebase Auth:", authError);
             return res.status(500).json("Error updating password in Firebase Auth");
         }
-        // Also update password in Firestore for consistency
+        
+        // Update hashed password in Firestore
         await updateDoc(userDocRef, { 
-            password: newPassword,
+            password: hashedPassword,
             updatedAt: new Date() 
         });
+        
         res.status(200).json("Password reset successfully");
     } catch (error) {
         console.error("Error resetting password:", error);
@@ -403,24 +466,55 @@ const resendVerificationEmail = async(req, res) => {
 }
 
 const checkAuth = async(req, res) => {
-    const token = req.headers.authorization?.split(' ')[1];
+    // First try to get token from cookie
+    let token = req.cookies?.authToken;
+    
+    // Fallback to Authorization header
     if (!token) {
-        return res.status(401).json("Unauthorized");
+        const authHeader = req.headers.authorization;
+        token = authHeader && authHeader.split(' ')[1];
     }
+    
+    if (!token) {
+        return res.status(401).json({ message: "No authentication token provided" });
+    }
+    
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
         const userDocRef = doc(users, decoded.id);
         const userDoc = await getDoc(userDocRef);
+        
         if (!userDoc.exists()) {
-            return res.status(404).json("User not found");
+            return res.status(404).json({ message: "User not found" });
         }
-        res.status(200).json({
+
+        // Return safe user data without password
+        const safeUserData = {
             id: userDoc.id,
-            ...userDoc.data()
-        });
+            uid: userDoc.data().uid,
+            fullName: userDoc.data().fullName,
+            email: userDoc.data().email,
+            role: userDoc.data().role || 'user',
+            profilePic: userDoc.data().profilePic,
+            emailVerified: userDoc.data().emailVerified,
+            createdAt: userDoc.data().createdAt
+        };
+
+        res.status(200).json(safeUserData);
     } catch (error) {
         console.error("Error checking authentication:", error);
-        res.status(500).json("Error checking authentication");
+        
+        // Clear invalid cookie
+        if (req.cookies?.authToken) {
+            res.clearCookie('authToken', {
+                httpOnly: true,
+                secure: env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                path: '/'
+            });
+        }
+        
+        res.status(403).json({ message: "Invalid or expired token" });
     }
 }
 
@@ -429,15 +523,25 @@ const getAllUsers = async(req, res) => {
         const snapshot = await getDocs(users);
         const usersList = [];
         snapshot.forEach((doc) => {
+            const userData = doc.data();
+            // Return safe user data without password
             usersList.push({
                 id: doc.id,
-                ...doc.data()
+                uid: userData.uid,
+                fullName: userData.fullName,
+                email: userData.email,
+                role: userData.role || 'user',
+                profilePic: userData.profilePic,
+                emailVerified: userData.emailVerified,
+                createdAt: userData.createdAt,
+                gender: userData.gender,
+                age: userData.age
             });
         });
         res.status(200).json(usersList);
     } catch (error) {
         console.error("Error getting all users:", error);
-        res.status(500).json("Error getting all users");
+        res.status(500).json({ message: "Error getting all users" });
     }
 }
 
