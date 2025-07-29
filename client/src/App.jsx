@@ -16,6 +16,8 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
+import AddProject from './pages/AddProject';
+import EmailVerification from './pages/EmailVerification';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminTeachers from './pages/admin/Teachers';
 import AdminUsers from './pages/admin/Users';
@@ -71,9 +73,15 @@ const App = () => {
                 path="/project" 
                 element={
                   <RoleBasedRoute allowedRoles={['user']}>
-                    <Projects />
+                    <AddProject />
                   </RoleBasedRoute>
                 } 
+              />
+              
+              {/* Email Verification */}
+              <Route 
+                path="/verify-email" 
+                element={<EmailVerification />} 
               />
               
               {/* Admin Routes - Only for admin and teacher roles */}

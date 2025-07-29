@@ -115,7 +115,7 @@ const useUserStore = create((set, get) => ({
                 localStorage.setItem('token', response.data.token);
                 api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
                 set({ user: response.data.user, token: response.data.token, loading: false });
-                return { success: true };
+                return { success: true, user: response.data.user };
             } else {
                 set({ error: 'No token received', loading: false });
                 return { success: false, error: 'No token received' };

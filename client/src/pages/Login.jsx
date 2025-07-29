@@ -63,7 +63,20 @@ const Login = () => {
   const onSubmit = async (data) => {
     const result = await login(data.email, data.password);
     if (result.success) {
-      navigate('/');
+      // Check if email is verified
+      if (result.user && !result.user.emailVerified) {
+        setSnackbar({
+          open: true,
+          message: 'Please verify your email before continuing. Check your inbox for verification link.',
+          severity: 'warning'
+        });
+        // Redirect to email verification page
+        setTimeout(() => {
+          navigate(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        }, 2000);
+      } else {
+        navigate('/');
+      }
     } else {
       setMessage(result.error);
     }

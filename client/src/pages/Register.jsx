@@ -90,7 +90,7 @@ const Register = () => {
         severity: 'success'
       });
       setTimeout(() => {
-        navigate('/login');
+        navigate(`/verify-email?email=${encodeURIComponent(data.email)}`);
       }, 2000);
     } else {
       setSnackbar({

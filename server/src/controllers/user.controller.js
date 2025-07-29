@@ -465,6 +465,57 @@ const updateUserRole = async (req, res) => {
     }
 };
 
+const syncEmailVerification = async(req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json("Email is required");
+        }
+
+        // Find user by email
+        const snapshot = await getDocs(users);
+        const userDoc = snapshot.docs.find(doc => doc.data().email === email);
+        
+        if (!userDoc) {
+            return res.status(404).json("User not found");
+        }
+
+        // Check Firebase Auth verification status
+        try {
+            const userRecord = await admin.auth().getUserByEmail(email);
+            
+            if (userRecord.emailVerified && !userDoc.data().emailVerified) {
+                // Update Firestore to match Firebase Auth status
+                await updateDoc(doc(users, userDoc.id), { 
+                    emailVerified: true, 
+                    updatedAt: new Date() 
+                });
+                
+                res.status(200).json({
+                    message: "Email verification status synced",
+                    verified: true,
+                    user: {
+                        id: userDoc.id,
+                        ...userDoc.data(),
+                        emailVerified: true
+                    }
+                });
+            } else {
+                res.status(200).json({
+                    message: "Email verification status checked",
+                    verified: userRecord.emailVerified
+                });
+            }
+        } catch (authError) {
+            console.error("Error syncing email verification:", authError);
+            res.status(500).json("Error syncing email verification");
+        }
+    } catch (error) {
+        console.error("Error syncing email verification:", error);
+        res.status(500).json("Error syncing email verification");
+    }
+}
+
 export {
   registerUser,
   getUser,
@@ -475,6 +526,7 @@ export {
   resetPassword,
   verifyEmail,
   resendVerificationEmail,
+  syncEmailVerification,
   deleteUser,
   checkAuth,
   updateUserRole

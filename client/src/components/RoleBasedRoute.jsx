@@ -5,7 +5,8 @@ import {
   AdminPanelSettings as AdminIcon,
   School as TeacherIcon,
   Person as UserIcon,
-  Security as SecurityIcon
+  Security as SecurityIcon,
+  Email as EmailIcon
 } from '@mui/icons-material';
 import useUserStore from '../store/useUserStore';
 
@@ -29,11 +30,12 @@ const ROLE_COLORS = {
 };
 
 /**
- * RoleBasedRoute - Enhanced route protection with role hierarchy
+ * RoleBasedRoute - Enhanced route protection with role hierarchy and email verification
  * @param {React.ReactNode} children - Components to render
  * @param {string[]} allowedRoles - Array of allowed roles
  * @param {number} minRoleLevel - Minimum role level required (1=user, 2=teacher, 3=admin)
  * @param {boolean} exact - Exact role match required
+ * @param {boolean} requireEmailVerification - Require email verification
  * @param {string} redirectTo - Custom redirect path for unauthorized access
  */
 const RoleBasedRoute = ({ 
@@ -41,6 +43,7 @@ const RoleBasedRoute = ({
   allowedRoles = ['user', 'admin', 'teacher'],
   minRoleLevel = null,
   exact = false,
+  requireEmailVerification = true,
   redirectTo = null
 }) => {
   const { user, loading } = useUserStore();
@@ -65,6 +68,64 @@ const RoleBasedRoute = ({
   // Redirect to login if not authenticated
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Check email verification for certain routes
+  if (requireEmailVerification && !user.emailVerified) {
+    // Allow access to email verification page itself
+    if (location.pathname === '/verify-email') {
+      return children;
+    }
+    
+    // For admin routes and project creation, require verification
+    const criticalPaths = ['/project', '/admin'];
+    const isCriticalPath = criticalPaths.some(path => location.pathname.startsWith(path));
+    
+    if (isCriticalPath) {
+      return (
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            minHeight: '60vh',
+            gap: 3,
+            p: 3,
+            textAlign: 'center'
+          }}
+        >
+          <SecurityIcon sx={{ fontSize: 80, color: 'warning.main' }} />
+          
+          <Typography variant="h4" color="warning.main" gutterBottom>
+            Email Verification Required
+          </Typography>
+          
+          <Alert severity="warning" sx={{ maxWidth: 500 }}>
+            <Typography variant="body2">
+              <strong>Email Verification Required</strong><br/>
+              Your email address <strong>{user.email}</strong> must be verified 
+              before accessing administrative features or creating projects.
+            </Typography>
+          </Alert>
+
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button 
+              variant="outlined" 
+              onClick={() => window.history.back()}
+            >
+              Go Back
+            </Button>
+            <Button 
+              variant="contained" 
+              onClick={() => window.location.href = `/verify-email?email=${user.email}`}
+            >
+              Verify Email
+            </Button>
+          </Box>
+        </Box>
+      );
+    }
   }
 
   const userRole = user.role || 'user';

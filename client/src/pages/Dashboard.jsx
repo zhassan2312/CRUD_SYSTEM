@@ -28,6 +28,7 @@ import { useNavigate } from 'react-router-dom';
 import useUserStore from '../store/useUserStore';
 import useProjectStore from '../store/useProjectStore';
 import useTeacherStore from '../store/useTeacherStore';
+import EmailVerificationBanner from '../components/EmailVerificationBanner';
 
 const Dashboard = () => {
   const { user } = useUserStore();
@@ -71,6 +72,9 @@ const Dashboard = () => {
 
   return (
     <Container maxWidth="lg">
+      {/* Email Verification Banner */}
+      <EmailVerificationBanner user={user} />
+
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           Welcome back, {user?.fullName}!
