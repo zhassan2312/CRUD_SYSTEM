@@ -237,12 +237,19 @@ const useUserStore = create((set, get) => ({
             // Validate token and fetch user from backend
             api.get('/checkAuth')
                 .then(response => {
-                    set({ user: response.data });
-                    localStorage.setItem('user', JSON.stringify(response.data));
+                    // Ensure user has a role (default to 'user' if not set)
+                    const userData = {
+                        ...response.data,
+                        role: response.data.role || 'user'
+                    };
+                    set({ user: userData });
+                    localStorage.setItem('user', JSON.stringify(userData));
                 })
                 .catch(error => {
+                    console.error('Auth check failed:', error);
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
+                    delete api.defaults.headers.common['Authorization'];
                     set({ user: null, token: null });
                 });
         } else {

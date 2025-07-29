@@ -1,212 +1,273 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import {
+  Container,
+  Paper,
+  TextField,
+  Button,
+  Typography,
+  Box,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
+  Avatar,
+  IconButton,
+  Divider,
+  Snackbar,
+  CircularProgress,
+} from '@mui/material';
+import { PhotoCamera } from '@mui/icons-material';
 import useUserStore from '../store/useUserStore';
 
+const registerSchema = yup.object({
+  fullName: yup.string().required('Full name is required'),
+  email: yup.string().email('Invalid email').required('Email is required'),
+  password: yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
+  confirmPassword: yup.string()
+    .oneOf([yup.ref('password'), null], 'Passwords must match')
+    .required('Confirm password is required'),
+  gender: yup.string().required('Gender is required'),
+  age: yup.number()
+    .min(1, 'Age must be at least 1')
+    .max(120, 'Age must be less than 120')
+    .required('Age is required'),
+});
+
 const Register = () => {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    gender: '',
-    age: '',
-    profilePic: null
-  });
-  
-  const [message, setMessage] = useState('');
-  const { register, loading, error, clearError } = useUserStore();
+  const { register: registerUser, loading, error, clearError } = useUserStore();
+  const [profilePic, setProfilePic] = useState(null);
+  const [profilePicPreview, setProfilePicPreview] = useState('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const navigate = useNavigate();
 
-  useEffect(() => {
-    clearError();
-  }, []);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(registerSchema),
+  });
 
-  const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === 'profilePic') {
-      setFormData(prev => ({
-        ...prev,
-        [name]: files[0]
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setProfilePic(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePicPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (formData.password !== formData.confirmPassword) {
-      setMessage('Passwords do not match');
-      return;
-    }
+  const onSubmit = async (data) => {
+    const userData = {
+      ...data,
+      profilePic: profilePic,
+    };
 
-    const result = await register(formData);
+    const result = await registerUser(userData);
     if (result.success) {
-      setMessage(result.message);
+      setSnackbar({
+        open: true,
+        message: result.message,
+        severity: 'success'
+      });
       setTimeout(() => {
         navigate('/login');
-      }, 3000);
+      }, 2000);
     } else {
-      setMessage(result.error);
+      setSnackbar({
+        open: true,
+        message: result.error,
+        severity: 'error'
+      });
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
-          </h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {(error || message) && (
-            <div className={`border px-4 py-3 rounded ${
-              error ? 'bg-red-100 border-red-400 text-red-700' : 'bg-green-100 border-green-400 text-green-700'
-            }`}>
-              {error || message}
-            </div>
-          )}
-          
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
+    <Container component="main" maxWidth="sm">
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          py: 3,
+        }}
+      >
+        <Paper
+          elevation={3}
+          sx={{
+            padding: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          <Typography component="h1" variant="h4" sx={{ mb: 3 }}>
+            Sign Up
+          </Typography>
+
+          <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ width: '100%' }}>
+            {/* Profile Picture Upload */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
               <input
-                id="fullName"
-                name="fullName"
-                type="text"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Full Name"
-                value={formData.fullName}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Email address"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Confirm Password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
-                Gender
-              </label>
-              <select
-                id="gender"
-                name="gender"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                value={formData.gender}
-                onChange={handleChange}
-              >
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="age" className="block text-sm font-medium text-gray-700">
-                Age
-              </label>
-              <input
-                id="age"
-                name="age"
-                type="number"
-                min="1"
-                max="120"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Age"
-                value={formData.age}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="profilePic" className="block text-sm font-medium text-gray-700">
-                Profile Picture (Optional)
-              </label>
-              <input
-                id="profilePic"
-                name="profilePic"
-                type="file"
                 accept="image/*"
-                className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                onChange={handleChange}
+                style={{ display: 'none' }}
+                id="profile-pic-upload"
+                type="file"
+                onChange={handleFileChange}
               />
-            </div>
-          </div>
+              <label htmlFor="profile-pic-upload">
+                <IconButton
+                  color="primary"
+                  aria-label="upload picture"
+                  component="span"
+                  sx={{ p: 0 }}
+                >
+                  <Avatar
+                    src={profilePicPreview}
+                    sx={{ width: 80, height: 80, cursor: 'pointer' }}
+                  >
+                    <PhotoCamera />
+                  </Avatar>
+                </IconButton>
+              </label>
+            </Box>
 
-          <div>
-            <button
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="fullName"
+              label="Full Name"
+              name="fullName"
+              autoComplete="name"
+              autoFocus
+              {...register('fullName')}
+              error={!!errors.fullName}
+              helperText={errors.fullName?.message}
+            />
+
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label="Email Address"
+              name="email"
+              autoComplete="email"
+              {...register('email')}
+              error={!!errors.email}
+              helperText={errors.email?.message}
+            />
+
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label="Password"
+              type="password"
+              id="password"
+              autoComplete="new-password"
+              {...register('password')}
+              error={!!errors.password}
+              helperText={errors.password?.message}
+            />
+
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="confirmPassword"
+              label="Confirm Password"
+              type="password"
+              id="confirmPassword"
+              {...register('confirmPassword')}
+              error={!!errors.confirmPassword}
+              helperText={errors.confirmPassword?.message}
+            />
+
+            <FormControl fullWidth margin="normal" error={!!errors.gender}>
+              <InputLabel id="gender-label">Gender</InputLabel>
+              <Select
+                labelId="gender-label"
+                id="gender"
+                label="Gender"
+                {...register('gender')}
+              >
+                <MenuItem value="male">Male</MenuItem>
+                <MenuItem value="female">Female</MenuItem>
+                <MenuItem value="other">Other</MenuItem>
+              </Select>
+              {errors.gender && (
+                <FormHelperText>{errors.gender.message}</FormHelperText>
+              )}
+            </FormControl>
+
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="age"
+              label="Age"
+              name="age"
+              type="number"
+              {...register('age')}
+              error={!!errors.age}
+              helperText={errors.age?.message}
+            />
+
+            <Button
               type="submit"
+              fullWidth
+              variant="contained"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              sx={{ mt: 3, mb: 2 }}
+              startIcon={loading ? <CircularProgress size={20} /> : null}
             >
-              {loading ? 'Creating Account...' : 'Create Account'}
-            </button>
-          </div>
+              {loading ? 'Signing Up...' : 'Sign Up'}
+            </Button>
 
-          <div className="text-center">
-            <Link to="/login" className="text-indigo-600 hover:text-indigo-500">
-              Already have an account? Sign in
-            </Link>
-          </div>
-        </form>
-      </div>
-    </div>
+            <Divider sx={{ my: 2 }} />
+
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="body2">
+                Already have an account?{' '}
+                <Link to="/login" style={{ textDecoration: 'none' }}>
+                  <Button variant="text">Sign In</Button>
+                </Link>
+              </Typography>
+            </Box>
+          </Box>
+        </Paper>
+      </Box>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Container>
   );
 };
 
