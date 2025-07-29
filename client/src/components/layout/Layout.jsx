@@ -24,6 +24,7 @@ import {
   People as PeopleIcon,
   FolderOpen as ProjectIcon,
   School as SchoolIcon,
+  AdminPanelSettings as AdminIcon,
   AccountCircle,
   Logout,
   Settings,
@@ -61,10 +62,10 @@ const Layout = ({ children }) => {
   };
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/', roles: ['user', 'admin'] },
-    { text: 'Projects', icon: <ProjectIcon />, path: '/projects', roles: ['user', 'admin'] },
-    { text: 'Teachers', icon: <SchoolIcon />, path: '/admin/teachers', roles: ['admin'] },
-    { text: 'Users', icon: <PeopleIcon />, path: '/admin/users', roles: ['admin'] },
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/', roles: ['user', 'admin', 'teacher'] },
+    { text: 'Projects', icon: <ProjectIcon />, path: '/projects', roles: ['user', 'admin', 'teacher'] },
+    { text: 'Admin Dashboard', icon: <AdminIcon />, path: '/admin', roles: ['admin', 'teacher'] },
+    { text: 'Teachers & Admins', icon: <SchoolIcon />, path: '/admin/teachers', roles: ['admin', 'teacher'] },
   ];
 
   const filteredMenuItems = menuItems.filter(item => 

@@ -1,6 +1,6 @@
 import env from './env.config.js';
 import { initializeApp } from 'firebase/app';
-import { collection, getFirestore, addDoc, setDoc, doc, getDoc, getDocs, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, getFirestore, addDoc, setDoc, doc, getDoc, getDocs, deleteDoc, updateDoc, query, where, orderBy } from 'firebase/firestore';
 import admin from 'firebase-admin';
 
 // Firebase configuration
@@ -29,5 +29,26 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const users = collection(db, 'users');
 const mail = collection(db, 'mail');
+const projects = collection(db, 'projects');
+const teachers = collection(db, 'teachers');
 
-export { app, admin, db, users, mail, addDoc, setDoc, doc, getDoc, getDocs, deleteDoc, updateDoc };
+export { 
+  app, 
+  admin, 
+  db, 
+  users, 
+  mail, 
+  projects, 
+  teachers, 
+  addDoc, 
+  setDoc, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  deleteDoc, 
+  updateDoc, 
+  collection, 
+  query, 
+  where, 
+  orderBy 
+};

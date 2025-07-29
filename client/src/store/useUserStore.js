@@ -150,6 +150,7 @@ const useUserStore = create((set, get) => ({
             formData.append('password', userData.password);
             formData.append('gender', userData.gender);
             formData.append('age', parseInt(userData.age));
+            formData.append('role', userData.role || 'user');
             
             if (userData.profilePic) {
                 formData.append('profilePic', userData.profilePic);
@@ -254,6 +255,27 @@ const useUserStore = create((set, get) => ({
                 });
         } else {
             set({ user: null, token: null });
+        }
+    },
+
+    // Admin operations
+    updateUserRole: async (userId, newRole) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await api.put(`/updateUserRole/${userId}`, { role: newRole });
+            
+            // Update the users array in state
+            const { users } = get();
+            const updatedUsers = users.map(user => 
+                user.id === userId ? { ...user, role: newRole } : user
+            );
+            
+            set({ users: updatedUsers, loading: false });
+            return { success: true, message: 'User role updated successfully!' };
+        } catch (error) {
+            const errorMessage = error.response?.data || error.message;
+            set({ error: errorMessage, loading: false });
+            return { success: false, error: errorMessage };
         }
     },
 

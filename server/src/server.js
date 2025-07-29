@@ -3,6 +3,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import userRouter from './routes/user.route.js';
+import projectRouter from './routes/project.route.js';
+import teacherRouter from './routes/teacher.route.js';
+import adminRouter from './routes/admin.route.js';
 
 import './config/firebase.config.js';
 
@@ -22,6 +25,9 @@ app.use(cors({
 app.use(helmet());
 
 app.use('/api/user', userRouter);
+app.use('/api/projects', projectRouter);
+app.use('/api/teachers', teacherRouter);
+app.use('/api/admin', adminRouter);
 
 
 app.listen(3000, () => {

@@ -10,7 +10,8 @@ const registerUser = async(req, res) => {
             password,
             email,
             gender,
-            age
+            age,
+            role
         } = req.body;
 
         let profilePicUrl = '';
@@ -53,7 +54,7 @@ const registerUser = async(req, res) => {
             gender,
             age,
             profilePic: profilePicUrl,
-            role: 'user', // Default role is 'user'
+            role: role || 'user', // Use provided role or default to 'user'
             emailVerified: false, // Initially false
             createdAt: new Date()
         });
@@ -434,6 +435,36 @@ const getAllUsers = async(req, res) => {
     }
 }
 
+const updateUserRole = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { role } = req.body;
+
+        // Validate role
+        if (!role || !['admin', 'user'].includes(role)) {
+            return res.status(400).json("Invalid role. Must be 'admin' or 'user'");
+        }
+
+        const userDocRef = doc(users, userId);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (!userDoc.exists()) {
+            return res.status(404).json("User not found");
+        }
+
+        // Update user role in Firestore
+        await updateDoc(userDocRef, {
+            role: role,
+            updatedAt: new Date()
+        });
+
+        res.status(200).json("User role updated successfully");
+    } catch (error) {
+        console.error("Error updating user role:", error);
+        res.status(500).json("Error updating user role");
+    }
+};
+
 export {
   registerUser,
   getUser,
@@ -445,5 +476,6 @@ export {
   verifyEmail,
   resendVerificationEmail,
   deleteUser,
-    checkAuth
+  checkAuth,
+  updateUserRole
 };

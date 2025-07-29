@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { registerUser, getUser, getAllUsers, loginUser, checkAuth, logoutUser, editUser, resetPassword, verifyEmail, resendVerificationEmail, deleteUser } from "../controllers/user.controller.js";
+import { registerUser, getUser, getAllUsers, loginUser, checkAuth, logoutUser, editUser, resetPassword, verifyEmail, resendVerificationEmail, deleteUser, updateUserRole } from "../controllers/user.controller.js";
 import { users, admin, getDocs, doc, updateDoc } from "../config/firebase.config.js";
 
 const router = Router();
@@ -34,6 +34,9 @@ router.get('/getAllUsers', getAllUsers);
 router.put('/updateUser/:id', upload.single('profilePic'), editUser);
 router.delete('/deleteUser/:id', deleteUser);
 router.get('/logout/:id', logoutUser);
+
+// Admin routes
+router.put('/updateUserRole/:userId', updateUserRole);
 
 // Test route to manually sync email verification status
 router.post('/syncEmailVerification', async (req, res) => {

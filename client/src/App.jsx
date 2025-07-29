@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline, Box } from '@mui/material';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { theme } from './theme/theme';
 import useUserStore from './store/useUserStore';
 import Layout from './components/layout/Layout';
@@ -12,6 +14,7 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminTeachers from './pages/admin/Teachers';
 import AdminUsers from './pages/admin/Users';
 
@@ -60,9 +63,25 @@ const App = () => {
                 } 
               />
               <Route 
+                path="/project" 
+                element={
+                  <ProtectedRoute>
+                    <Projects />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin" 
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'teacher']}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="/admin/teachers" 
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={['admin', 'teacher']}>
                     <AdminTeachers />
                   </ProtectedRoute>
                 } 
@@ -70,7 +89,7 @@ const App = () => {
               <Route 
                 path="/admin/users" 
                 element={
-                  <ProtectedRoute allowedRoles={['admin']}>
+                  <ProtectedRoute allowedRoles={['admin', 'teacher']}>
                     <AdminUsers />
                   </ProtectedRoute>
                 } 
@@ -89,6 +108,18 @@ const App = () => {
           </Box>
         )}
       </Router>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </ThemeProvider>
   );
 };

@@ -37,6 +37,7 @@ const registerSchema = yup.object({
     .min(1, 'Age must be at least 1')
     .max(120, 'Age must be less than 120')
     .required('Age is required'),
+  role: yup.string().required('Role is required'),
 });
 
 const Register = () => {
@@ -52,6 +53,15 @@ const Register = () => {
     formState: { errors },
   } = useForm({
     resolver: yupResolver(registerSchema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      gender: '',
+      age: '',
+      role: 'user',
+    },
   });
 
   const handleFileChange = (event) => {
@@ -203,8 +213,9 @@ const Register = () => {
               <Select
                 labelId="gender-label"
                 id="gender"
-                label="Gender"
+                name="gender"
                 {...register('gender')}
+                defaultValue=""
               >
                 <MenuItem value="male">Male</MenuItem>
                 <MenuItem value="female">Female</MenuItem>
@@ -212,6 +223,24 @@ const Register = () => {
               </Select>
               {errors.gender && (
                 <FormHelperText>{errors.gender.message}</FormHelperText>
+              )}
+            </FormControl>
+
+            <FormControl fullWidth margin="normal" error={!!errors.role}>
+              <InputLabel id="role-label">Role</InputLabel>
+              <Select
+                labelId="role-label"
+                id="role"
+                name="role"
+                {...register('role')}
+                defaultValue="user"
+              >
+                <MenuItem value="user">User</MenuItem>
+                <MenuItem value="teacher">Teacher</MenuItem>
+                <MenuItem value="admin">Admin</MenuItem>
+              </Select>
+              {errors.role && (
+                <FormHelperText>{errors.role.message}</FormHelperText>
               )}
             </FormControl>
 
