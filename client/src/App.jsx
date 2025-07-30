@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
+import { useThemeMode } from './contexts/ThemeContext';
 import { useEffect } from 'react';
 
 // Auth Components
@@ -17,17 +18,18 @@ import UserProfile from './pages/user/UserProfile';
 import SearchPage from './pages/SearchPage';
 
 // Admin Components
-import AdminDashboard from './pages/admin/Dashboard';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import Teachers from './pages/admin/Teachers';
 import ProjectReview from './pages/admin/ProjectReview';
 
 // Components
-import Layout from './components/Layout';
+import Sidebar from './components/layout/Sidebar';
 import LoadingScreen from './components/LoadingScreen';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   const { checkAuth, isLoading, user } = useAuthStore();
+  const { darkMode, toggleDarkMode } = useThemeMode();
 
   useEffect(() => {
     checkAuth();
@@ -47,69 +49,69 @@ function App() {
       <Route path="/email-verification" element={<EmailVerification />} />
       <Route path="/verify-email" element={<EmailVerification />} />
       
-      {/* Protected Routes */}
+      {/* Protected Routes with  Sidebar */}
       <Route path="/" element={
         <ProtectedRoute requiredRole="user">
-          <Layout>
+          <Sidebar darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
             <UserDashboard />
-          </Layout>
+          </Sidebar>
         </ProtectedRoute>
       } />
       
       <Route path="/project" element={
         <ProtectedRoute requiredRole="user">
-          <Layout>
+          <Sidebar darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
             <AddProject />
-          </Layout>
+          </Sidebar>
         </ProtectedRoute>
       } />
       
       <Route path="/project/:projectId" element={
         <ProtectedRoute requiredRole="user">
-          <Layout>
+          <Sidebar darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
             <ProjectDetails />
-          </Layout>
+          </Sidebar>
         </ProtectedRoute>
       } />
       
       <Route path="/profile" element={
         <ProtectedRoute requiredRole="user">
-          <Layout>
+          <Sidebar darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
             <UserProfile />
-          </Layout>
+          </Sidebar>
         </ProtectedRoute>
       } />
       
       <Route path="/search" element={
         <ProtectedRoute requiredRole="user">
-          <Layout>
+          <Sidebar darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
             <SearchPage />
-          </Layout>
+          </Sidebar>
         </ProtectedRoute>
       } />
       
       {/* Admin Routes */}
       <Route path="/admin" element={
         <ProtectedRoute requiredRole="admin">
-          <Layout>
+          <Sidebar darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
             <AdminDashboard />
-          </Layout>
+          </Sidebar>
         </ProtectedRoute>
       } />
       
       <Route path="/admin/teachers" element={
         <ProtectedRoute requiredRole="admin">
-          <Layout>
+          <Sidebar darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
             <Teachers />
-          </Layout>
+          </Sidebar>
         </ProtectedRoute>
       } />
       
       <Route path="/admin/projects" element={
         <ProtectedRoute requiredRole="admin">
-          <Layout>
+          <Sidebar darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
             <ProjectReview />
-          </Layout>
+          </Sidebar>
         </ProtectedRoute>
       } />
       

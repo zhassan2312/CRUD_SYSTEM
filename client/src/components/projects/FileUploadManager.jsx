@@ -172,7 +172,7 @@ const FileUploadManager = ({ projectId, onUploadComplete, open, onClose }) => {
         <IconButton
           aria-label="close"
           onClick={handleClose}
-          disabled={uploading}
+          disabled={uploadProgress?.status === 'uploading'}
           sx={{
             position: 'absolute',
             right: 8,
