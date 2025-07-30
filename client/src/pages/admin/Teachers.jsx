@@ -1,514 +1,361 @@
-import React, { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
   Box,
   Button,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
+  Avatar,
   IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Avatar,
-  Chip,
-  Alert,
+  Grid,
   CircularProgress,
-  Stack,
-  Switch,
-  FormControlLabel,
+  Fab
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  School as SchoolIcon,
-  Upload as UploadIcon,
-  Close as CloseIcon,
-} from '@mui/icons-material';
+import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { toast } from 'react-toastify';
-import useTeacherStore from '../../store/useTeacherStore';
+import { useTeacherStore } from '../../store/teacherStore';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
-// Validation schema
 const teacherSchema = yup.object({
-  fullName: yup.string().required('Full name is required').min(2, 'Name must be at least 2 characters'),
-  email: yup.string().email('Invalid email format').required('Email is required'),
-  department: yup.string().required('Department is required'),
-  specialization: yup.string().required('Specialization is required'),
-  phoneNumber: yup.string(),
-  profilePic: yup.mixed(),
-  isAdmin: yup.boolean(),
+  name: yup.string().required('Name is required').min(2, 'Name must be at least 2 characters'),
+  email: yup.string().email('Invalid email').required('Email is required'),
+  department: yup.string(),
+  specialization: yup.string(),
 });
 
 const Teachers = () => {
-  const { 
-    teachers, 
-    loading, 
-    error, 
-    fetchTeachers, 
-    addTeacher, 
-    updateTeacher, 
-    deleteTeacher,
-    clearError 
-  } = useTeacherStore();
-  
-  const [openDialog, setOpenDialog] = useState(false);
+  const { teachers, getTeachers, addTeacher, updateTeacher, deleteTeacher, isLoading } = useTeacherStore();
+  const [open, setOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const {
     control,
     handleSubmit,
     reset,
-    watch,
     formState: { errors }
   } = useForm({
     resolver: yupResolver(teacherSchema),
     defaultValues: {
-      fullName: '',
+      name: '',
       email: '',
       department: '',
-      specialization: '',
-      phoneNumber: '',
-      profilePic: null,
-      isAdmin: false,
+      specialization: ''
     }
   });
 
-  const watchedImage = watch('profilePic');
-
   useEffect(() => {
-    fetchTeachers();
-  }, []);
+    getTeachers();
+  }, [getTeachers]);
 
-  useEffect(() => {
-    if (watchedImage && watchedImage[0]) {
-      const file = watchedImage[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setImagePreview(null);
-    }
-  }, [watchedImage]);
-
-  const handleOpenDialog = (teacher = null) => {
-    if (teacher) {
-      setEditingTeacher(teacher);
-      reset({
-        fullName: teacher.fullName,
-        email: teacher.email,
-        department: teacher.department,
-        specialization: teacher.specialization,
-        phoneNumber: teacher.phoneNumber || '',
-        profilePic: null,
-        isAdmin: teacher.isAdmin || false,
-      });
-      if (teacher.profilePicUrl) {
-        setImagePreview(teacher.profilePicUrl);
-      }
-    } else {
-      setEditingTeacher(null);
-      reset({
-        fullName: '',
-        email: '',
-        department: '',
-        specialization: '',
-        phoneNumber: '',
-        profilePic: null,
-        isAdmin: false,
-      });
-      setImagePreview(null);
-    }
-    setOpenDialog(true);
-    clearError();
+  const handleOpen = () => {
+    setEditingTeacher(null);
+    reset({
+      name: '',
+      email: '',
+      department: '',
+      specialization: ''
+    });
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
+  const handleEdit = (teacher) => {
+    setEditingTeacher(teacher);
+    reset({
+      name: teacher.name,
+      email: teacher.email,
+      department: teacher.department || '',
+      specialization: teacher.specialization || ''
+    });
+    setSelectedFile(null);
+    setPreviewUrl(teacher.profileUrl);
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
     setEditingTeacher(null);
-    setImagePreview(null);
+    setSelectedFile(null);
+    setPreviewUrl(null);
     reset();
-    clearError();
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
   };
 
   const onSubmit = async (data) => {
-    try {
-      const teacherData = {
-        ...data,
-        profilePic: data.profilePic?.[0] || null,
-      };
+    const formData = { ...data };
+    
+    if (selectedFile) {
+      formData.profileImage = selectedFile;
+    }
 
-      let result;
-      if (editingTeacher) {
-        result = await updateTeacher(editingTeacher.id, teacherData);
-      } else {
-        result = await addTeacher(teacherData);
-      }
-
-      if (result.success) {
-        toast.success(result.message);
-        handleCloseDialog();
-      } else {
-        toast.error(result.error);
-      }
-    } catch (error) {
-      toast.error('An error occurred while saving the teacher');
+    const result = editingTeacher 
+      ? await updateTeacher(editingTeacher.id, formData)
+      : await addTeacher(formData);
+    
+    if (result.success) {
+      handleClose();
     }
   };
 
   const handleDelete = async (teacherId) => {
-    if (window.confirm('Are you sure you want to delete this teacher?')) {
-      const result = await deleteTeacher(teacherId);
-      if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.error);
-      }
+    if (window.confirm('Are you sure you want to delete this teacher? This action cannot be undone.')) {
+      await deleteTeacher(teacherId);
     }
   };
 
-  const departments = [
-    'Computer Science',
-    'Engineering',
-    'Business',
-    'Mathematics',
-    'Science',
-    'Arts',
-    'Medicine',
-    'Law',
-    'Education',
-    'Other',
-  ];
-
   return (
     <Container maxWidth="lg">
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Box>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Teachers & Admins Management
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Manage teachers and grant admin privileges
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-          disabled={loading}
-        >
-          Add Teacher
-        </Button>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Teachers Management
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Manage teachers and their information
+        </Typography>
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress />
+      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6">
+            All Teachers ({teachers.length})
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpen}
+          >
+            Add Teacher
+          </Button>
         </Box>
-      ) : (
-        <TableContainer component={Paper}>
+        
+        <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Teacher</TableCell>
+                <TableCell>Profile</TableCell>
+                <TableCell>Name</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Department</TableCell>
                 <TableCell>Specialization</TableCell>
-                <TableCell>Phone</TableCell>
-                <TableCell>Admin Role</TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {teachers.map((teacher) => (
-                <TableRow key={teacher.id}>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Avatar 
-                        src={teacher.profilePicUrl} 
-                        alt={teacher.fullName}
-                        sx={{ width: 40, height: 40 }}
-                      >
-                        {teacher.fullName?.charAt(0)}
-                      </Avatar>
-                      <Typography variant="body1">
-                        {teacher.fullName}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>{teacher.email}</TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={teacher.department} 
-                      size="small" 
-                      color="primary"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>{teacher.specialization}</TableCell>
-                  <TableCell>{teacher.phoneNumber || 'N/A'}</TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={teacher.isAdmin ? 'Admin' : 'Teacher'} 
-                      size="small" 
-                      color={teacher.isAdmin ? 'error' : 'default'}
-                      variant={teacher.isAdmin ? 'filled' : 'outlined'}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      size="small"
-                      onClick={() => handleOpenDialog(teacher)}
-                      color="primary"
-                      disabled={loading}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDelete(teacher.id)}
-                      color="error"
-                      disabled={loading}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    <CircularProgress />
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : teachers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    <Box sx={{ py: 3 }}>
+                      <Typography variant="body1" color="text.secondary">
+                        No teachers found. Add your first teacher to get started.
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                teachers.map((teacher) => (
+                  <TableRow key={teacher.id} hover>
+                    <TableCell>
+                      <Avatar
+                        src={teacher.profileUrl}
+                        alt={teacher.name}
+                        sx={{ width: 40, height: 40 }}
+                      >
+                        {teacher.name.charAt(0).toUpperCase()}
+                      </Avatar>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="bold">
+                        {teacher.name}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>{teacher.email}</TableCell>
+                    <TableCell>{teacher.department || '-'}</TableCell>
+                    <TableCell>{teacher.specialization || '-'}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => handleEdit(teacher)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDelete(teacher.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
-          
-          {teachers.length === 0 && (
-            <Box sx={{ textAlign: 'center', py: 8 }}>
-              <SchoolIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                No teachers yet
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Add your first teacher to get started
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => handleOpenDialog()}
+        </TableContainer>
+      </Paper>
+
+      {/* Add/Edit Teacher Dialog */}
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {editingTeacher ? 'Edit Teacher' : 'Add New Teacher'}
+        </DialogTitle>
+        <DialogContent>
+          <Box component="form" sx={{ pt: 1 }}>
+            {/* Profile Picture Upload */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+              <Avatar
+                src={previewUrl}
+                sx={{ width: 80, height: 80, mb: 1 }}
               >
-                Add Teacher
+                {!previewUrl && <AddIcon />}
+              </Avatar>
+              <Button
+                component="label"
+                variant="outlined"
+                startIcon={<CloudUploadIcon />}
+                size="small"
+              >
+                {previewUrl ? 'Change Photo' : 'Upload Photo'}
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
               </Button>
             </Box>
-          )}
-        </TableContainer>
-      )}
 
-      {/* Teacher Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogTitle>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              {editingTeacher ? 'Edit Teacher' : 'Add New Teacher'}
-              <IconButton onClick={handleCloseDialog}>
-                <CloseIcon />
-              </IconButton>
-            </Box>
-          </DialogTitle>
-          
-          <DialogContent>
-            <Stack spacing={3} sx={{ mt: 1 }}>
-              {/* Full Name */}
-              <Controller
-                name="fullName"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Full Name"
-                    fullWidth
-                    error={!!errors.fullName}
-                    helperText={errors.fullName?.message}
-                  />
-                )}
-              />
-
-              {/* Email */}
-              <Controller
-                name="email"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Email"
-                    type="email"
-                    fullWidth
-                    error={!!errors.email}
-                    helperText={errors.email?.message}
-                  />
-                )}
-              />
-
-              {/* Department */}
-              <Controller
-                name="department"
-                control={control}
-                render={({ field }) => (
-                  <FormControl fullWidth error={!!errors.department}>
-                    <InputLabel>Department</InputLabel>
-                    <Select {...field} label="Department">
-                      {departments.map((dept) => (
-                        <MenuItem key={dept} value={dept}>
-                          {dept}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {errors.department && (
-                      <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 2 }}>
-                        {errors.department.message}
-                      </Typography>
-                    )}
-                  </FormControl>
-                )}
-              />
-
-              {/* Specialization */}
-              <Controller
-                name="specialization"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Specialization"
-                    fullWidth
-                    error={!!errors.specialization}
-                    helperText={errors.specialization?.message}
-                  />
-                )}
-              />
-
-              {/* Phone Number */}
-              <Controller
-                name="phoneNumber"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Phone Number (Optional)"
-                    fullWidth
-                    error={!!errors.phoneNumber}
-                    helperText={errors.phoneNumber?.message}
-                  />
-                )}
-              />
-
-              {/* Admin Role Toggle */}
-              <Controller
-                name="isAdmin"
-                control={control}
-                render={({ field }) => (
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={field.value || false}
-                        onChange={(e) => field.onChange(e.target.checked)}
-                        color="primary"
-                      />
-                    }
-                    label="Grant Admin Privileges"
-                    sx={{
-                      '& .MuiFormControlLabel-label': {
-                        fontSize: '0.875rem',
-                        color: 'text.secondary'
-                      }
-                    }}
-                  />
-                )}
-              />
-
-              {/* Profile Picture */}
-              <Box>
-                <Typography variant="subtitle1" gutterBottom>
-                  Profile Picture (Optional)
-                </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
                 <Controller
-                  name="profilePic"
+                  name="name"
                   control={control}
-                  render={({ field: { onChange, value, ...field } }) => (
-                    <Box>
-                      <input
-                        {...field}
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => onChange(e.target.files)}
-                        style={{ display: 'none' }}
-                        id="profile-upload"
-                      />
-                      <label htmlFor="profile-upload">
-                        <Button
-                          variant="outlined"
-                          component="span"
-                          startIcon={<UploadIcon />}
-                          fullWidth
-                        >
-                          Upload Profile Picture
-                        </Button>
-                      </label>
-                      
-                      {imagePreview && (
-                        <Box sx={{ mt: 2, textAlign: 'center' }}>
-                          <Avatar
-                            src={imagePreview}
-                            alt="Profile preview"
-                            sx={{ 
-                              width: 80, 
-                              height: 80, 
-                              mx: 'auto',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                            }}
-                          />
-                        </Box>
-                      )}
-                    </Box>
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="Full Name"
+                      required
+                      error={!!errors.name}
+                      helperText={errors.name?.message}
+                    />
                   )}
                 />
-              </Box>
-            </Stack>
-          </DialogContent>
-          
-          <DialogActions sx={{ p: 3 }}>
-            <Button onClick={handleCloseDialog} disabled={loading}>
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              variant="contained" 
-              disabled={loading}
-              startIcon={loading ? <CircularProgress size={16} /> : null}
-            >
-              {loading ? 'Saving...' : (editingTeacher ? 'Update Teacher' : 'Add Teacher')}
-            </Button>
-          </DialogActions>
-        </form>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Controller
+                  name="email"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="Email Address"
+                      type="email"
+                      required
+                      error={!!errors.email}
+                      helperText={errors.email?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Controller
+                  name="department"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="Department"
+                      error={!!errors.department}
+                      helperText={errors.department?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Controller
+                  name="specialization"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      multiline
+                      rows={2}
+                      label="Specialization"
+                      error={!!errors.specialization}
+                      helperText={errors.specialization?.message}
+                    />
+                  )}
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button
+            onClick={handleSubmit(onSubmit)}
+            variant="contained"
+            disabled={isLoading}
+          >
+            {isLoading ? <CircularProgress size={24} /> : (editingTeacher ? 'Update' : 'Add')}
+          </Button>
+        </DialogActions>
       </Dialog>
+
+      <Fab
+        color="primary"
+        aria-label="add"
+        sx={{
+          position: 'fixed',
+          bottom: 16,
+          right: 16,
+        }}
+        onClick={handleOpen}
+      >
+        <AddIcon />
+      </Fab>
     </Container>
   );
 };
