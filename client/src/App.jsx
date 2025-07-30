@@ -12,6 +12,7 @@ import EmailVerification from './pages/EmailVerification';
 // User Components
 import UserDashboard from './pages/user/Dashboard';
 import AddProject from './pages/user/AddProject';
+import UserProfile from './pages/user/UserProfile';
 
 // Admin Components
 import AdminDashboard from './pages/admin/Dashboard';
@@ -57,6 +58,14 @@ function App() {
         <ProtectedRoute requiredRole="user">
           <Layout>
             <AddProject />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/profile" element={
+        <ProtectedRoute requiredRole="user">
+          <Layout>
+            <UserProfile />
           </Layout>
         </ProtectedRoute>
       } />

@@ -1,6 +1,7 @@
 import env from './env.config.js';
 import { initializeApp } from 'firebase/app';
 import { collection, getFirestore, addDoc, setDoc, doc, getDoc, getDocs, deleteDoc, updateDoc, query, where, orderBy } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import admin from 'firebase-admin';
 
 // Firebase configuration
@@ -25,8 +26,10 @@ if (!admin.apps.length) {
   });
 }
 
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 const users = collection(db, 'users');
 const mail = collection(db, 'mail');
 const projects = collection(db, 'projects');
@@ -36,6 +39,7 @@ export {
   app, 
   admin, 
   db, 
+  storage,
   users, 
   mail, 
   projects, 
