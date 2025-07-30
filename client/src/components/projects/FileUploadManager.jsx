@@ -235,7 +235,7 @@ const FileUploadManager = ({ projectId, onUploadComplete, open, onClose }) => {
                   <ListItemText
                     primary={file.name}
                     secondary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Chip
                           label={formatFileSize(file.size)}
                           size="small"
@@ -247,7 +247,7 @@ const FileUploadManager = ({ projectId, onUploadComplete, open, onClose }) => {
                           color="primary"
                           variant="outlined"
                         />
-                      </Box>
+                      </span>
                     }
                   />
                   <ListItemSecondaryAction>

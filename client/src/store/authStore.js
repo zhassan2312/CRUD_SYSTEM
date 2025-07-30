@@ -93,8 +93,9 @@ export const useAuthStore = create((set, get) => ({
         isLoading: false 
       });
       
-      // Store user info in localStorage for persistence
+      // Store user info and token in localStorage for persistence
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('token', response.data.token);
       
       toast.success('Login successful!');
       return { success: true };
@@ -124,6 +125,7 @@ export const useAuthStore = create((set, get) => ({
     try {
       await api.post('/auth/logout');
       localStorage.removeItem('user');
+      localStorage.removeItem('token');
       set({ 
         user: null, 
         isAuthenticated: false 
@@ -132,6 +134,7 @@ export const useAuthStore = create((set, get) => ({
     } catch (error) {
       // Even if logout fails on server, clear local state
       localStorage.removeItem('user');
+      localStorage.removeItem('token');
       set({ 
         user: null, 
         isAuthenticated: false 

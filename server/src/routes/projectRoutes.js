@@ -14,8 +14,8 @@ import {
   uploadProjectFiles,
   getProjectFiles,
   deleteProjectFile,
-  downloadProjectFile,
-  previewProjectFile,
+  downloadFile as downloadProjectFile,
+  previewFile as previewProjectFile,
   getFileStatistics
 } from "../controllers/fileManager.controller.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";

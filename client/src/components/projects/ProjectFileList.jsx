@@ -207,8 +207,8 @@ const ProjectFileList = ({ projectId, refreshTrigger }) => {
                         </Typography>
                       }
                       secondary={
-                        <Box sx={{ mt: 0.5 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <span style={{ marginTop: '4px', display: 'block' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                             <Chip
                               label={formatFileSize(file.fileSize)}
                               size="small"
@@ -228,11 +228,11 @@ const ProjectFileList = ({ projectId, refreshTrigger }) => {
                                 variant="outlined"
                               />
                             )}
-                          </Box>
+                          </span>
                           <Typography variant="caption" color="text.secondary">
-                            Uploaded {format(new Date(file.uploadedAt.seconds * 1000), 'MMM dd, yyyy')}
+                            Uploaded {file.uploadedAt ? format(new Date(file.uploadedAt), 'MMM dd, yyyy') : 'Unknown date'}
                           </Typography>
-                        </Box>
+                        </span>
                       }
                     />
                     <ListItemSecondaryAction>

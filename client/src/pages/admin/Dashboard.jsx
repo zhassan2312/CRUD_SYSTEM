@@ -13,8 +13,8 @@ import {
   TableHead,
   TableRow,
   Chip,
-  Button,
-  CircularProgress
+    Button,
+    CircularProgress
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -38,7 +38,13 @@ const AdminDashboard = () => {
   }, [getAllProjects, getTeachers]);
 
   const handleStatusChange = async (projectId, status) => {
-    await updateProjectStatus(projectId, status);
+    const reviewData = {
+      status,
+      reviewedBy: user?.uid,
+      reviewDate: new Date().toISOString(),
+      comments: `Status changed to ${status}`
+    };
+    await updateProjectStatus(projectId, reviewData);
   };
 
   const getStatusColor = (status) => {
@@ -79,7 +85,7 @@ const AdminDashboard = () => {
 
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -97,7 +103,7 @@ const AdminDashboard = () => {
           </Card>
         </Grid>
 
-        <Grid xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -115,7 +121,7 @@ const AdminDashboard = () => {
           </Card>
         </Grid>
 
-        <Grid xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -133,7 +139,7 @@ const AdminDashboard = () => {
           </Card>
         </Grid>
 
-        <Grid xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -154,7 +160,7 @@ const AdminDashboard = () => {
 
       {/* Project Status Overview */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -178,7 +184,7 @@ const AdminDashboard = () => {
           </Card>
         </Grid>
 
-        <Grid xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Card>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

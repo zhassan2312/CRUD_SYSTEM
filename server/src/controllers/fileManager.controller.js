@@ -1,28 +1,50 @@
-import { bucket,db } from '../config/firebase.config.js';
+import { 
+  collection, 
+  doc, 
+  addDoc, 
+  getDoc, 
+  getDocs, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  where, 
+  orderBy, 
+  limit, 
+  Timestamp 
+} from 'firebase/firestore';
+import { bucket, db } from '../config/firebase.config.js';
+
 /**
  * Upload multiple files for a project
  */
 export const uploadProjectFiles = async (req, res) => {
     try {
+        console.log('📁 File upload request received:', {
+            projectId: req.params.projectId,
+            fileCount: req.files?.length || 0,
+            userId: req.user?.uid
+        });
+
         const { projectId } = req.params;
         const files = req.files;
 
         if (!files || files.length === 0) {
+            console.log('❌ No files provided');
             return res.status(400).json({ 
                 message: 'No files provided' 
             });
         }
 
         // Verify project ownership
-        const projectRef = db.collection('projects').doc(projectId);
-        const projectDoc = await projectRef.get();
+        const projectRef = doc(db, 'projects', projectId);
+        const projectDoc = await getDoc(projectRef);
 
-        if (!projectDoc.exists) {
+        if (!projectDoc.exists()) {
             return res.status(404).json({ message: 'Project not found' });
         }
 
         const projectData = projectDoc.data();
-        if (projectData.userId !== req.user.uid && req.user.role !== 'admin') {
+        if (projectData.createdBy !== req.user.uid && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Access denied' });
         }
 
@@ -34,49 +56,53 @@ export const uploadProjectFiles = async (req, res) => {
             const fileUpload = bucket.file(filePath);
             const stream = fileUpload.createWriteStream({
                 metadata: {
-                    contentType: file.mimetype,
-                    metadata: {
-                        originalName: file.originalname,
-                        uploadedBy: req.user.uid,
-                        uploadedAt: new Date().toISOString(),
-                        projectId: projectId
-                    }
+                    contentType: file.mimetype
                 }
             });
 
             return new Promise((resolve, reject) => {
-                stream.on('error', reject);
+                stream.on('error', (error) => {
+                    console.error('File upload error:', error);
+                    reject(error);
+                });
+
                 stream.on('finish', async () => {
                     try {
-                        // Make file publicly accessible
+                        // Make file publicly readable
                         await fileUpload.makePublic();
                         
-                        // Get public URL
-                        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+                        // Get signed URL for downloading
+                        const [signedUrl] = await fileUpload.getSignedUrl({
+                            action: 'read',
+                            expires: '03-09-2491' // Far future date
+                        });
 
-                        // Create file metadata document
                         const fileMetadata = {
-                            id: fileName.split('.')[0], // Use filename without extension as ID
-                            originalName: file.originalname,
-                            fileName: fileName,
+                            fileName: file.originalname,
                             filePath: filePath,
                             fileSize: file.size,
                             mimeType: file.mimetype,
-                            downloadUrl: publicUrl,
-                            uploadedBy: req.user.uid,
-                            uploadedAt: new Date(),
                             projectId: projectId,
-                            downloadCount: 0
+                            uploadedBy: req.user.uid,
+                            uploadedAt: Timestamp.fromDate(new Date()),
+                            downloadUrl: signedUrl
                         };
 
-                        // Save file metadata to Firestore
-                        await db.collection('projectFiles').doc(fileName.split('.')[0]).set(fileMetadata);
+                        // Save metadata to Firestore
+                        const projectFilesRef = collection(db, 'projectFiles');
+                        const docRef = await addDoc(projectFilesRef, fileMetadata);
 
-                        resolve(fileMetadata);
+                        resolve({
+                            id: docRef.id,
+                            ...fileMetadata,
+                            downloadUrl: signedUrl
+                        });
                     } catch (error) {
+                        console.error('Error saving file metadata:', error);
                         reject(error);
                     }
                 });
+
                 stream.end(file.buffer);
             });
         });
@@ -87,7 +113,6 @@ export const uploadProjectFiles = async (req, res) => {
             message: 'Files uploaded successfully',
             files: uploadedFiles
         });
-
     } catch (error) {
         console.error('Error uploading files:', error);
         res.status(500).json({ 
@@ -98,92 +123,100 @@ export const uploadProjectFiles = async (req, res) => {
 };
 
 /**
- * Get all files for a project
+ * Get all files for a specific project
  */
 export const getProjectFiles = async (req, res) => {
     try {
         const { projectId } = req.params;
+        
+        // Verify project ownership
+        const projectRef = doc(db, 'projects', projectId);
+        const projectDoc = await getDoc(projectRef);
 
-        // Verify project access
-        const projectRef = db.collection('projects').doc(projectId);
-        const projectDoc = await projectRef.get();
-
-        if (!projectDoc.exists) {
+        if (!projectDoc.exists()) {
             return res.status(404).json({ message: 'Project not found' });
         }
 
         const projectData = projectDoc.data();
-        if (projectData.userId !== req.user.uid && req.user.role !== 'admin') {
+        
+        if (projectData.createdBy !== req.user.uid && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Access denied' });
         }
 
-        // Get files for this project
-        const filesSnapshot = await db.collection('projectFiles')
-            .where('projectId', '==', projectId)
-            .orderBy('uploadedAt', 'desc')
-            .get();
+        // Get all files for this project
+        const filesCollection = collection(db, 'projectFiles');
+        const filesQuery = query(
+            filesCollection,
+            where('projectId', '==', projectId)
+            // orderBy('uploadedAt', 'desc') - Commented out to avoid composite index requirement
+        );
+        const filesSnapshot = await getDocs(filesQuery);
 
-        const files = [];
-        filesSnapshot.forEach(doc => {
-            files.push({
+        const files = filesSnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
                 id: doc.id,
-                ...doc.data()
-            });
+                ...data,
+                uploadedAt: data.uploadedAt?.toDate() || new Date()
+            };
         });
+
+        // Sort files by uploadedAt in descending order (most recent first)
+        files.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
 
         res.status(200).json({
+            message: 'Files retrieved successfully',
             files: files
         });
-
     } catch (error) {
-        console.error('Error getting project files:', error);
+        console.error('Error retrieving files:', error);
         res.status(500).json({ 
-            message: 'Failed to get project files',
+            message: 'Failed to retrieve files',
             error: error.message 
         });
     }
 };
 
 /**
- * Delete a project file
+ * Delete a file from a project
  */
 export const deleteProjectFile = async (req, res) => {
     try {
         const { projectId, fileId } = req.params;
 
-        // Get file metadata
-        const fileDoc = await db.collection('projectFiles').doc(fileId).get();
-        
-        if (!fileDoc.exists) {
+        // Get file document
+        const fileRef = doc(db, 'projectFiles', fileId);
+        const fileDoc = await getDoc(fileRef);
+
+        if (!fileDoc.exists()) {
             return res.status(404).json({ message: 'File not found' });
         }
 
         const fileData = fileDoc.data();
 
         // Verify project ownership
-        const projectRef = db.collection('projects').doc(projectId);
-        const projectDoc = await projectRef.get();
+        const projectRef = doc(db, 'projects', projectId);
+        const projectDoc = await getDoc(projectRef);
 
-        if (!projectDoc.exists) {
+        if (!projectDoc.exists()) {
             return res.status(404).json({ message: 'Project not found' });
         }
 
         const projectData = projectDoc.data();
-        if (projectData.userId !== req.user.uid && req.user.role !== 'admin') {
+        if (projectData.createdBy !== req.user.uid && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Access denied' });
         }
 
-        // Delete file from Firebase Storage
+        // Delete file from Cloud Storage
         const file = bucket.file(fileData.filePath);
         await file.delete();
 
-        // Delete file metadata from Firestore
-        await db.collection('projectFiles').doc(fileId).delete();
+        // Delete file document from Firestore
+        await deleteDoc(fileRef);
 
         res.status(200).json({
             message: 'File deleted successfully'
         });
-
     } catch (error) {
         console.error('Error deleting file:', error);
         res.status(500).json({ 
@@ -194,56 +227,63 @@ export const deleteProjectFile = async (req, res) => {
 };
 
 /**
- * Download a project file (with tracking)
+ * Download a file
  */
-export const downloadProjectFile = async (req, res) => {
+export const downloadFile = async (req, res) => {
     try {
         const { projectId, fileId } = req.params;
 
-        // Get file metadata
-        const fileDoc = await db.collection('projectFiles').doc(fileId).get();
-        
-        if (!fileDoc.exists) {
+        // Get file document
+        const fileRef = doc(db, 'projectFiles', fileId);
+        const fileDoc = await getDoc(fileRef);
+
+        if (!fileDoc.exists()) {
             return res.status(404).json({ message: 'File not found' });
         }
 
         const fileData = fileDoc.data();
 
-        // Verify project access
-        const projectRef = db.collection('projects').doc(projectId);
-        const projectDoc = await projectRef.get();
+        // Verify project ownership
+        const projectRef = doc(db, 'projects', projectId);
+        const projectDoc = await getDoc(projectRef);
 
-        if (!projectDoc.exists) {
+        if (!projectDoc.exists()) {
             return res.status(404).json({ message: 'Project not found' });
         }
 
         const projectData = projectDoc.data();
-        if (projectData.userId !== req.user.uid && req.user.role !== 'admin') {
+        if (projectData.createdBy !== req.user.uid && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Access denied' });
         }
 
-        // Increment download count
-        await db.collection('projectFiles').doc(fileId).update({
+        // Track download
+        await updateDoc(fileRef, {
             downloadCount: (fileData.downloadCount || 0) + 1,
-            lastDownloadedAt: new Date(),
-            lastDownloadedBy: req.user.uid
+            lastDownloaded: Timestamp.fromDate(new Date())
         });
 
-        // Track download in analytics
-        await db.collection('fileDownloads').add({
+        // Log download activity
+        const fileDownloadsRef = collection(db, 'fileDownloads');
+        await addDoc(fileDownloadsRef, {
             fileId: fileId,
-            fileName: fileData.originalName,
             projectId: projectId,
             downloadedBy: req.user.uid,
-            downloadedAt: new Date(),
-            userAgent: req.headers['user-agent'] || '',
-            ipAddress: req.ip || req.connection.remoteAddress
+            downloadedAt: Timestamp.fromDate(new Date()),
+            userAgent: req.headers['user-agent'],
+            ipAddress: req.ip
         });
 
-        // Return download URL
+        // Get signed URL for download
+        const file = bucket.file(fileData.filePath);
+        const [signedUrl] = await file.getSignedUrl({
+            action: 'read',
+            expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+        });
+
         res.status(200).json({
-            downloadUrl: fileData.downloadUrl,
-            fileName: fileData.originalName,
+            message: 'Download URL generated',
+            downloadUrl: signedUrl,
+            fileName: fileData.fileName,
             fileSize: fileData.fileSize,
             mimeType: fileData.mimeType
         });
@@ -258,71 +298,59 @@ export const downloadProjectFile = async (req, res) => {
 };
 
 /**
- * Preview a project file (for supported file types)
+ * Preview a file (for images, PDFs, etc.)
  */
-export const previewProjectFile = async (req, res) => {
+export const previewFile = async (req, res) => {
     try {
         const { projectId, fileId } = req.params;
 
-        // Get file metadata
-        const fileDoc = await db.collection('projectFiles').doc(fileId).get();
-        
-        if (!fileDoc.exists) {
+        // Get file document
+        const fileRef = doc(db, 'projectFiles', fileId);
+        const fileDoc = await getDoc(fileRef);
+
+        if (!fileDoc.exists()) {
             return res.status(404).json({ message: 'File not found' });
         }
 
         const fileData = fileDoc.data();
 
-        // Verify project access
-        const projectRef = db.collection('projects').doc(projectId);
-        const projectDoc = await projectRef.get();
+        // Verify project ownership
+        const projectRef = doc(db, 'projects', projectId);
+        const projectDoc = await getDoc(projectRef);
 
-        if (!projectDoc.exists) {
+        if (!projectDoc.exists()) {
             return res.status(404).json({ message: 'Project not found' });
         }
 
         const projectData = projectDoc.data();
-        if (projectData.userId !== req.user.uid && req.user.role !== 'admin') {
+        if (projectData.createdBy !== req.user.uid && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Access denied' });
         }
 
         // Check if file type supports preview
-        const previewableMimeTypes = [
-            'image/jpeg',
-            'image/png',
-            'image/gif',
-            'image/webp',
-            'application/pdf',
-            'text/plain',
-            'text/csv'
+        const supportedTypes = [
+            'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+            'application/pdf', 'text/plain', 'text/html', 'text/css',
+            'application/json', 'text/javascript'
         ];
 
-        if (!previewableMimeTypes.includes(fileData.mimeType)) {
+        if (!supportedTypes.includes(fileData.mimeType)) {
             return res.status(400).json({ 
-                message: 'File type does not support preview',
-                supportedTypes: previewableMimeTypes
+                message: 'File type not supported for preview' 
             });
         }
 
-        // For text files, read content directly
-        if (fileData.mimeType.startsWith('text/')) {
-            const file = bucket.file(fileData.filePath);
-            const [fileBuffer] = await file.download();
-            const content = fileBuffer.toString('utf-8');
+        // Get signed URL for preview
+        const file = bucket.file(fileData.filePath);
+        const [signedUrl] = await file.getSignedUrl({
+            action: 'read',
+            expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+        });
 
-            return res.status(200).json({
-                previewType: 'text',
-                content: content,
-                fileName: fileData.originalName,
-                mimeType: fileData.mimeType
-            });
-        }
-
-        // For other supported files, return the URL for preview
         res.status(200).json({
-            previewType: fileData.mimeType.startsWith('image/') ? 'image' : 'document',
-            previewUrl: fileData.downloadUrl,
-            fileName: fileData.originalName,
+            message: 'Preview URL generated',
+            previewUrl: signedUrl,
+            fileName: fileData.fileName,
             mimeType: fileData.mimeType,
             fileSize: fileData.fileSize
         });
@@ -347,54 +375,130 @@ export const getFileStatistics = async (req, res) => {
         }
 
         // Get total files count
-        const filesSnapshot = await db.collection('projectFiles').get();
+        const filesCollection = collection(db, 'projectFiles');
+        const filesSnapshot = await getDocs(filesCollection);
         const totalFiles = filesSnapshot.size;
 
         // Calculate total storage used
         let totalStorageBytes = 0;
         const filesByType = {};
-        
+        const filesByProject = {};
+
         filesSnapshot.forEach(doc => {
             const fileData = doc.data();
             totalStorageBytes += fileData.fileSize || 0;
-            
-            const mimeType = fileData.mimeType;
-            if (!filesByType[mimeType]) {
-                filesByType[mimeType] = 0;
-            }
-            filesByType[mimeType]++;
+
+            // Count by file type
+            const mimeType = fileData.mimeType || 'unknown';
+            filesByType[mimeType] = (filesByType[mimeType] || 0) + 1;
+
+            // Count by project
+            const projectId = fileData.projectId;
+            filesByProject[projectId] = (filesByProject[projectId] || 0) + 1;
         });
 
-        // Get download statistics
-        const downloadsSnapshot = await db.collection('fileDownloads')
-            .orderBy('downloadedAt', 'desc')
-            .limit(1000)
-            .get();
+        // Convert bytes to more readable format
+        const formatBytes = (bytes) => {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        };
 
-        const totalDownloads = downloadsSnapshot.size;
+        // Get recent uploads (last 7 days)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        // Get recent downloads
-        const recentDownloads = [];
-        downloadsSnapshot.docs.slice(0, 10).forEach(doc => {
-            recentDownloads.push({
-                id: doc.id,
-                ...doc.data()
-            });
-        });
+        const recentUploads = filesSnapshot.docs.filter(doc => {
+            const uploadedAt = doc.data().uploadedAt?.toDate();
+            return uploadedAt && uploadedAt >= sevenDaysAgo;
+        }).length;
 
         res.status(200).json({
-            totalFiles,
-            totalStorageBytes,
-            totalStorageMB: Math.round(totalStorageBytes / (1024 * 1024) * 100) / 100,
-            filesByType,
-            totalDownloads,
-            recentDownloads
+            message: 'File statistics retrieved successfully',
+            statistics: {
+                totalFiles,
+                totalStorageBytes,
+                totalStorageFormatted: formatBytes(totalStorageBytes),
+                recentUploads,
+                filesByType,
+                topProjects: Object.entries(filesByProject)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 10)
+                    .map(([projectId, count]) => ({ projectId, fileCount: count }))
+            }
         });
 
     } catch (error) {
         console.error('Error getting file statistics:', error);
         res.status(500).json({ 
             message: 'Failed to get file statistics',
+            error: error.message 
+        });
+    }
+};
+
+/**
+ * Get file audit log for admin
+ */
+export const getFileAuditLog = async (req, res) => {
+    try {
+        // Only admins can access audit logs
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        const { 
+            page = 1, 
+            limit = 50,
+            projectId,
+            userId,
+            action // upload, download, delete
+        } = req.query;
+
+        // Build query
+        const downloadsCollection = collection(db, 'fileDownloads');
+        let downloadQuery = query(downloadsCollection, orderBy('downloadedAt', 'desc'));
+
+        if (projectId) {
+            downloadQuery = query(downloadQuery, where('projectId', '==', projectId));
+        }
+
+        if (userId) {
+            downloadQuery = query(downloadQuery, where('downloadedBy', '==', userId));
+        }
+
+        const downloadsSnapshot = await getDocs(downloadQuery);
+        const downloads = downloadsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            downloadedAt: doc.data().downloadedAt.toDate(),
+            action: 'download'
+        }));
+
+        // For simplicity, just return downloads for now
+        // In a production app, you'd want to consolidate all file activities
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + parseInt(limit);
+        const paginatedLogs = downloads.slice(startIndex, endIndex);
+
+        res.status(200).json({
+            message: 'Audit log retrieved successfully',
+            logs: paginatedLogs,
+            pagination: {
+                currentPage: parseInt(page),
+                totalItems: downloads.length,
+                totalPages: Math.ceil(downloads.length / limit),
+                hasNextPage: endIndex < downloads.length,
+                hasPrevPage: page > 1
+            }
+        });
+
+    } catch (error) {
+        console.error('Error getting audit log:', error);
+        res.status(500).json({ 
+            message: 'Failed to get audit log',
             error: error.message 
         });
     }
