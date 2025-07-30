@@ -236,6 +236,53 @@ export const useNotificationStore = create((set, get) => ({
     });
   },
 
+  // Check for new notifications and show toasts for important ones
+  checkForNewNotifications: async () => {
+    try {
+      // Get recent notifications (last 5 minutes)
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const response = await api.get(`/notifications?recent=${fiveMinutesAgo}&limit=10`);
+      
+      const recentNotifications = response.data.notifications || [];
+      
+      // Show toast notifications for important unread notifications
+      recentNotifications.forEach(notification => {
+        if (!notification.isRead && (
+          notification.type === 'success' || 
+          notification.type === 'error' ||
+          notification.category === 'project'
+        )) {
+          const toastOptions = {
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          };
+
+          switch (notification.type) {
+            case 'success':
+              toast.success(`📬 ${notification.title}: ${notification.message}`, toastOptions);
+              break;
+            case 'error':
+              toast.error(`📬 ${notification.title}: ${notification.message}`, toastOptions);
+              break;
+            case 'warning':
+              toast.warning(`📬 ${notification.title}: ${notification.message}`, toastOptions);
+              break;
+            default:
+              toast.info(`📬 ${notification.title}: ${notification.message}`, toastOptions);
+          }
+        }
+      });
+
+      return { success: true, count: recentNotifications.length };
+    } catch (error) {
+      console.error('Failed to check for new notifications:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
   // Format notification time
   formatNotificationTime: (dateString) => {
     const date = new Date(dateString);

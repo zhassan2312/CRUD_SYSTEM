@@ -21,15 +21,23 @@ export const getUserNotifications = asyncHandler(async (req, res) => {
     page = 1, 
     limit = 20,
     unreadOnly = false,
-    category = ''
+    category = '',
+    recent = ''
   } = req.query;
 
-  const result = await notificationService.getUserNotifications(userId, {
+  const options = {
     page,
     limit,
     unreadOnly: unreadOnly === 'true',
     category
-  });
+  };
+
+  // If recent parameter is provided, filter by recent notifications
+  if (recent) {
+    options.createdAfter = recent;
+  }
+
+  const result = await notificationService.getUserNotifications(userId, options);
 
   sendSuccess(res, result, "Notifications retrieved successfully");
 });

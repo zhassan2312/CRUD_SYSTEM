@@ -77,7 +77,7 @@ const FileStatistics = () => {
         setError('');
         
         const response = await api.get('/projects/admin/file-statistics');
-        setStats(response.data);
+        setStats(response.data.statistics); // Access the nested statistics object
       } catch (error) {
         console.error('Error fetching file statistics:', error);
         setError(error.response?.data?.message || 'Failed to load file statistics');
@@ -136,7 +136,7 @@ const FileStatistics = () => {
               <Typography variant="h6">Total Files</Typography>
             </Box>
             <Typography variant="h3" color="primary.main">
-              {stats.totalFiles.toLocaleString()}
+              {stats.totalFiles?.toLocaleString() || 0}
             </Typography>
           </CardContent>
         </Card>
@@ -150,7 +150,7 @@ const FileStatistics = () => {
               <Typography variant="h6">Storage Used</Typography>
             </Box>
             <Typography variant="h3" color="success.main">
-              {stats.totalStorageMB} MB
+              {stats.totalStorageFormatted}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {formatBytes(stats.totalStorageBytes)}
@@ -163,11 +163,14 @@ const FileStatistics = () => {
         <Card>
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Download sx={{ mr: 2, color: 'info.main' }} />
-              <Typography variant="h6">Total Downloads</Typography>
+              <TrendingUp sx={{ mr: 2, color: 'info.main' }} />
+              <Typography variant="h6">Recent Uploads</Typography>
             </Box>
             <Typography variant="h3" color="info.main">
-              {stats.totalDownloads.toLocaleString()}
+              {stats.recentUploads?.toLocaleString() || 0}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Last 7 days
             </Typography>
           </CardContent>
         </Card>
@@ -181,7 +184,7 @@ const FileStatistics = () => {
               Files by Type
             </Typography>
             <List dense>
-              {Object.entries(stats.filesByType)
+              {stats.filesByType ? Object.entries(stats.filesByType)
                 .sort(([,a], [,b]) => b - a)
                 .slice(0, 10)
                 .map(([mimeType, count]) => (
@@ -200,36 +203,46 @@ const FileStatistics = () => {
                     variant="outlined"
                   />
                 </ListItem>
-              ))}
+              )) : (
+                <ListItem>
+                  <ListItemText
+                    primary="No file data available"
+                    secondary="No files have been uploaded yet"
+                  />
+                </ListItem>
+              )}
             </List>
           </CardContent>
         </Card>
       </Grid>
 
-      {/* Recent Downloads */}
+      {/* Top Projects by File Count */}
       <Grid xs={12} md={6}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Recent Downloads
+              Top Projects by File Count
             </Typography>
-            {stats.recentDownloads.length === 0 ? (
+            {!stats.topProjects || stats.topProjects.length === 0 ? (
               <Typography variant="body2" color="text.secondary">
-                No recent downloads
+                No projects with files
               </Typography>
             ) : (
               <List dense>
-                {stats.recentDownloads.slice(0, 8).map((download) => (
-                  <ListItem key={download.id}>
+                {stats.topProjects.slice(0, 8).map((project, index) => (
+                  <ListItem key={project.projectId}>
                     <ListItemIcon>
-                      <Download fontSize="small" />
+                      <InsertDriveFile fontSize="small" />
                     </ListItemIcon>
                     <ListItemText
-                      primary={download.fileName}
-                      secondary={`Downloaded ${format(
-                        new Date(download.downloadedAt.seconds * 1000),
-                        'MMM dd, HH:mm'
-                      )}`}
+                      primary={`Project ${project.projectId.substring(0, 8)}...`}
+                      secondary={`${project.fileCount} file${project.fileCount !== 1 ? 's' : ''}`}
+                    />
+                    <Chip
+                      label={`#${index + 1}`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
                     />
                   </ListItem>
                 ))}

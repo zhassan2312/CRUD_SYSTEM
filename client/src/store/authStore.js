@@ -97,6 +97,18 @@ export const useAuthStore = create((set, get) => ({
       localStorage.setItem('user', JSON.stringify(response.data.user));
       localStorage.setItem('token', response.data.token);
       
+      // Import notification store to fetch notifications after login
+      const { useNotificationStore } = await import('./notificationStore');
+      const { getNotifications, checkForNewNotifications } = useNotificationStore.getState();
+      
+      // Fetch initial notifications
+      getNotifications(1, false);
+      
+      // Check for new notifications (recent ones)
+      setTimeout(() => {
+        checkForNewNotifications();
+      }, 1000);
+      
       toast.success('Login successful!');
       return { success: true };
     } catch (error) {

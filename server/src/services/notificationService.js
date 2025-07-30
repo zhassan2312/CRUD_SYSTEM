@@ -65,7 +65,8 @@ class NotificationService {
         page = 1, 
         limit = 20,
         unreadOnly = false,
-        category = ''
+        category = '',
+        createdAfter = ''
       } = options;
 
       // Simple query to avoid composite index issues
@@ -85,6 +86,15 @@ class NotificationService {
 
       if (category) {
         notifications = notifications.filter(n => n.category === category);
+      }
+
+      // Filter by creation date if createdAfter is provided
+      if (createdAfter) {
+        const filterDate = new Date(createdAfter);
+        notifications = notifications.filter(n => {
+          const notificationDate = n.createdAt?.toDate ? n.createdAt.toDate() : new Date(n.createdAt);
+          return notificationDate >= filterDate;
+        });
       }
 
       // Sort by creation date (most recent first)

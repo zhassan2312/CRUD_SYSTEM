@@ -209,7 +209,18 @@ export const deleteProjectFile = async (req, res) => {
 
         // Delete file from Cloud Storage
         const file = bucket.file(fileData.filePath);
-        await file.delete();
+        try {
+            await file.delete();
+            console.log(`✅ File deleted from storage: ${fileData.filePath}`);
+        } catch (storageError) {
+            // If file doesn't exist in storage (404), log it but continue with database deletion
+            if (storageError.code === 404) {
+                console.log(`⚠️ File not found in storage (already deleted?): ${fileData.filePath}`);
+            } else {
+                console.error('Error deleting file from storage:', storageError);
+                // For other storage errors, still try to delete the database record
+            }
+        }
 
         // Delete file document from Firestore
         await deleteDoc(fileRef);

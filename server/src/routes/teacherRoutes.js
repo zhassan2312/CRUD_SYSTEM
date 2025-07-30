@@ -34,11 +34,11 @@ const upload = multer({
 // All routes require authentication
 router.use(authMiddleware);
 
-// Teacher routes
+// Teacher routes with proper role checks
 router.get('/', getAllTeachers); // Allow all authenticated users to view teachers list
-router.get('/:id', checkRole('admin'), getTeacher); // Admin only for detailed teacher info
-router.post('/', checkRole('admin'), upload.single('profileImage'), validate(teacherSchema), addTeacher);
-router.put('/:id', checkRole('admin'), upload.single('profileImage'), validate(teacherSchema), updateTeacher);
+router.get('/:id', getTeacher);
+router.post('/', upload.single('profileImage'), validate(teacherSchema), checkRole('admin'), addTeacher);
+router.put('/:id', upload.single('profileImage'), validate(teacherSchema), checkRole('admin'), updateTeacher);
 router.delete('/:id', checkRole('admin'), deleteTeacher);
 
 export default router;

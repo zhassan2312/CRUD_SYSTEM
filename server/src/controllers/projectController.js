@@ -6,9 +6,9 @@ import {
   doc, 
   getDoc, 
   updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
+  deleteDoc,
+  query,
+  where,
   orderBy
 } from '../config/firebase.config.js';
 import { 
@@ -103,19 +103,43 @@ export const getAllProjectsForUser = async (req, res) => {
 // Create new project
 export const createProject = async (req, res) => {
   try {
+    console.log('📋 Creating project - Request body:', req.body);
+    console.log('👤 User from token:', req.user);
+    
     const {
       title,
       description,
-      students,
+      students: studentsRaw,
       supervisorId,
       coSupervisorId,
       sustainability
     } = req.body;
 
-    const userId = req.user.id;
+    // Parse students if it's a JSON string (from FormData)
+    let students = studentsRaw;
+    if (typeof studentsRaw === 'string') {
+      try {
+        students = JSON.parse(studentsRaw);
+      } catch (parseError) {
+        console.log('❌ Error parsing students JSON:', parseError);
+        return res.status(400).json({ 
+          message: "Invalid students data format" 
+        });
+      }
+    }
+
+    const userId = req.user.uid;
+    console.log('🔑 User ID extracted:', userId);
+    console.log('👥 Students parsed:', students);
 
     // Validate required fields
     if (!title || !description || !supervisorId || !sustainability) {
+      console.log('❌ Validation failed:', { 
+        title: !!title, 
+        description: !!description, 
+        supervisorId: !!supervisorId, 
+        sustainability: !!sustainability 
+      });
       return res.status(400).json({ 
         message: "Title, description, supervisor, and sustainability are required" 
       });
@@ -399,8 +423,8 @@ export const updateProjectStatus = async (req, res) => {
     // Create in-app notification for project owner
     try {
       await createNotification(projectData.createdBy, {
-        title: 'Project Status Updated',
-        message: `Your project "${projectData.title}" status has been changed to ${status.replace('-', ' ').toUpperCase()}${reviewComment ? ` with comment: "${reviewComment}"` : ''}`,
+        title: `Project ${status === 'approved' ? 'Approved' : status === 'rejected' ? 'Rejected' : 'Status Updated'}`,
+        message: `Your project "${projectData.title}" has been ${status.replace('-', ' ')}${reviewComment ? `. Review comment: "${reviewComment}"` : ''}`,
         type: status === 'approved' ? 'success' : status === 'rejected' ? 'error' : 'info',
         category: 'project',
         data: {
@@ -409,15 +433,53 @@ export const updateProjectStatus = async (req, res) => {
           oldStatus: projectData.status,
           newStatus: status,
           reviewComment,
-          reviewerName
+          reviewerName,
+          actionRequired: status === 'revision-required',
+          timestamp: new Date().toISOString()
         }
       });
+
+      // Also send notification to project supervisor if status is approved
+      if (status === 'approved' && projectData.supervisorId) {
+        await createNotification(projectData.supervisorId, {
+          title: 'Project Approved',
+          message: `The project "${projectData.title}" you are supervising has been approved by ${reviewerName}`,
+          type: 'success',
+          category: 'project',
+          data: {
+            projectId,
+            projectTitle: projectData.title,
+            status: 'approved',
+            reviewerName,
+            role: 'supervisor'
+          }
+        });
+      }
+
+      console.log(`📬 Notification sent to project creator for status change: ${status}`);
     } catch (notificationError) {
       console.error("Error creating notification:", notificationError);
     }
 
-    // Send email notification if requested
-    if (sendEmail && projectData.createdBy) {
+    // Send email notification automatically for project approvals/rejections
+    if ((status === 'approved' || status === 'rejected') && projectData.createdBy) {
+      try {
+        await sendStatusChangeEmail({
+          projectId,
+          projectTitle: projectData.title,
+          newStatus: status,
+          reviewComment,
+          reviewerName,
+          creatorId: projectData.createdBy
+        });
+      } catch (emailError) {
+        console.error("Error sending status change email:", emailError);
+        // Don't fail the request if email fails
+      }
+    }
+
+    // Send optional email for other status changes if requested
+    if (sendEmail && projectData.createdBy && status !== 'approved' && status !== 'rejected') {
       try {
         await sendStatusChangeEmail({
           projectId,

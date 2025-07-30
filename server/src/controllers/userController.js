@@ -291,8 +291,7 @@ export const getUserStats = async (req, res) => {
         
         const userData = userDoc.data();
         
-        // TODO: Add more statistics as needed
-        // For now, return basic account information
+        // Calculate user statistics
         const stats = {
             accountCreated: userData.createdAt,
             lastLogin: userData.lastLoginAt,

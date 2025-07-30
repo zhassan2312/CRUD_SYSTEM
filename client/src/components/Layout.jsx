@@ -30,16 +30,18 @@ const Layout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const { unreadCount, getNotifications } = useNotificationStore();
+  const { unreadCount, getNotifications, checkForNewNotifications } = useNotificationStore();
   const [anchorEl, setAnchorEl] = useState(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
 
   useEffect(() => {
-    // Load initial notification count
+    // Load initial notification count and check for new notifications
     if (user) {
       getNotifications();
+      // Check for new notifications and show toasts for recent ones
+      checkForNewNotifications();
     }
-  }, [user, getNotifications]);
+  }, [user, getNotifications, checkForNewNotifications]);
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
