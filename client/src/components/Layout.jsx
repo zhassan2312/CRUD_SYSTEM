@@ -18,6 +18,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import SchoolIcon from '@mui/icons-material/School';
 import AddIcon from '@mui/icons-material/Add';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 const Layout = ({ children }) => {
   const navigate = useNavigate();
@@ -60,6 +61,14 @@ const Layout = ({ children }) => {
                   variant={location.pathname === '/admin' ? 'outlined' : 'text'}
                 >
                   Dashboard
+                </Button>
+                <Button
+                  color="inherit"
+                  startIcon={<AssignmentIcon />}
+                  onClick={() => navigate('/admin/projects')}
+                  variant={location.pathname === '/admin/projects' ? 'outlined' : 'text'}
+                >
+                  Projects
                 </Button>
                 <Button
                   color="inherit"

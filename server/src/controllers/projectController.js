@@ -308,12 +308,14 @@ export const getAllProjects = async (req, res) => {
 export const updateProjectStatus = async (req, res) => {
   try {
     const { projectId } = req.params;
-    const { status } = req.body;
+    const { status, reviewComment, sendEmail } = req.body;
+    const reviewerId = req.user.id;
+    const reviewerName = req.user.fullName || req.user.name || 'Admin';
 
-    if (!status || !['pending', 'approved', 'rejected'].includes(status)) {
-      return res.status(400).json({ 
-        message: "Valid status (pending, approved, rejected) is required" 
-      });
+    // Validate status
+    const validStatuses = ['pending', 'under-review', 'approved', 'rejected', 'revision-required'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
     }
 
     const projectRef = doc(db, 'projects', projectId);
@@ -323,20 +325,166 @@ export const updateProjectStatus = async (req, res) => {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    await updateDoc(projectRef, {
+    const projectData = projectDoc.data();
+    
+    // Create status history entry
+    const statusEntry = {
       status,
-      updatedAt: new Date().toISOString()
-    });
+      comment: reviewComment || '',
+      reviewedBy: reviewerName,
+      reviewerId: reviewerId,
+      timestamp: new Date().toISOString()
+    };
 
-    res.status(200).json({
+    // Get existing status history or create new array
+    const statusHistory = projectData.statusHistory || [];
+    statusHistory.push(statusEntry);
+
+    // Update project with new status and history
+    const updateData = {
+      status,
+      lastReviewedAt: new Date().toISOString(),
+      lastReviewedBy: reviewerName,
+      statusHistory,
+      updatedAt: new Date().toISOString()
+    };
+
+    await updateDoc(projectRef, updateData);
+
+    // Send email notification if requested
+    if (sendEmail && projectData.createdBy) {
+      try {
+        await sendStatusChangeEmail({
+          projectId,
+          projectTitle: projectData.title,
+          newStatus: status,
+          reviewComment,
+          reviewerName,
+          creatorId: projectData.createdBy
+        });
+      } catch (emailError) {
+        console.error("Error sending status change email:", emailError);
+        // Don't fail the request if email fails
+      }
+    }
+
+    res.status(200).json({ 
       message: "Project status updated successfully",
-      status
+      project: {
+        id: projectId,
+        status,
+        statusHistory,
+        lastReviewedAt: updateData.lastReviewedAt,
+        lastReviewedBy: reviewerName
+      }
     });
 
   } catch (error) {
     console.error("Update project status error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
+};
+
+// Helper function to send status change emails
+const sendStatusChangeEmail = async ({ projectId, projectTitle, newStatus, reviewComment, reviewerName, creatorId }) => {
+  try {
+    // Get user email from users collection
+    const userRef = doc(db, 'users', creatorId);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      throw new Error('User not found');
+    }
+
+    const userData = userDoc.data();
+    const userEmail = userData.email;
+
+    // Create email document for Firebase Extension to process
+    const emailData = {
+      to: [userEmail],
+      message: {
+        subject: `Project Status Update: ${projectTitle}`,
+        html: generateStatusChangeEmailHTML({
+          projectTitle,
+          newStatus,
+          reviewComment,
+          reviewerName,
+          projectId
+        })
+      },
+      createdAt: new Date().toISOString()
+    };
+
+    // Add to mail collection (Firebase Email Extension will process this)
+    const mailRef = collection(db, 'mail');
+    await addDoc(mailRef, emailData);
+
+    console.log(`Status change email queued for project ${projectId} to ${userEmail}`);
+
+  } catch (error) {
+    console.error("Error queuing status change email:", error);
+    throw error;
+  }
+};
+
+// Helper function to generate email HTML
+const generateStatusChangeEmailHTML = ({ projectTitle, newStatus, reviewComment, reviewerName }) => {
+  const statusColors = {
+    'approved': '#4caf50',
+    'rejected': '#f44336',
+    'revision-required': '#ff9800',
+    'under-review': '#2196f3',
+    'pending': '#9e9e9e'
+  };
+
+  const statusMessages = {
+    'approved': 'Congratulations! Your project has been approved.',
+    'rejected': 'Unfortunately, your project has been rejected.',
+    'revision-required': 'Your project requires some revisions before approval.',
+    'under-review': 'Your project is currently under review.',
+    'pending': 'Your project status has been reset to pending.'
+  };
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Project Status Update</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2196f3; border-bottom: 2px solid #2196f3; padding-bottom: 10px;">
+          Project Status Update
+        </h2>
+        
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #333;">Project: ${projectTitle}</h3>
+          <div style="background-color: ${statusColors[newStatus]}; color: white; padding: 10px; border-radius: 3px; text-align: center; margin: 15px 0;">
+            <strong>Status: ${newStatus.toUpperCase().replace('-', ' ')}</strong>
+          </div>
+          <p>${statusMessages[newStatus]}</p>
+        </div>
+
+        ${reviewComment ? `
+        <div style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #2196f3; margin: 20px 0;">
+          <h4 style="margin-top: 0; color: #1976d2;">Reviewer Comments:</h4>
+          <p style="margin-bottom: 0; font-style: italic;">"${reviewComment}"</p>
+        </div>
+        ` : ''}
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+          <p><strong>Reviewed by:</strong> ${reviewerName}</p>
+          <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center; color: #666; font-size: 12px;">
+          <p>This is an automated notification from the Project Management System.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 };
 
 // Delete project
@@ -381,3 +529,5 @@ export const deleteProject = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+

@@ -15,6 +15,7 @@ import AddProject from './pages/user/AddProject';
 // Admin Components
 import AdminDashboard from './pages/admin/Dashboard';
 import Teachers from './pages/admin/Teachers';
+import ProjectReview from './pages/admin/ProjectReview';
 
 // Components
 import Layout from './components/Layout';
@@ -70,6 +71,14 @@ function App() {
         <ProtectedRoute requiredRole="admin">
           <Layout>
             <Teachers />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/admin/projects" element={
+        <ProtectedRoute requiredRole="admin">
+          <Layout>
+            <ProjectReview />
           </Layout>
         </ProtectedRoute>
       } />

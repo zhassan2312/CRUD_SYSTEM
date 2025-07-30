@@ -6,6 +6,7 @@ export const useProjectStore = create((set, get) => ({
   projects: [],
   allProjects: [], // For admin
   isLoading: false,
+  
 
   // Get user's projects
   getProjects: async () => {
@@ -20,6 +21,63 @@ export const useProjectStore = create((set, get) => ({
       set({ isLoading: false });
       console.error('Get projects error:', error);
       toast.error('Failed to fetch projects');
+    }
+  },
+
+  // Admin: Get all projects
+  getAllProjects: async () => {
+    try {
+      set({ isLoading: true });
+      const response = await api.get('/projects/admin');
+      set({ 
+        allProjects: response.data.projects,
+        projects: response.data.projects, // Also update projects for the component
+        isLoading: false 
+      });
+    } catch (error) {
+      set({ isLoading: false });
+      console.error('Get all projects error:', error);
+      toast.error('Failed to fetch all projects');
+    }
+  },
+
+  // Admin: Update project status with review
+  updateProjectStatus: async (projectId, reviewData) => {
+    try {
+      set({ isLoading: true });
+      const response = await api.put(`/projects/${projectId}/status`, reviewData);
+      
+      // Update project status in both lists
+      const updatedProject = response.data.project;
+      set(state => ({
+        allProjects: state.allProjects.map(project => 
+          project.id === projectId 
+            ? { ...project, ...updatedProject }
+            : project
+        ),
+        projects: state.projects.map(project => 
+          project.id === projectId 
+            ? { ...project, ...updatedProject }
+            : project
+        ),
+        isLoading: false
+      }));
+      
+      const statusMessage = {
+        'approved': 'approved',
+        'rejected': 'rejected', 
+        'revision-required': 'marked for revision',
+        'under-review': 'moved to under review',
+        'pending': 'reset to pending'
+      };
+      
+      toast.success(`Project ${statusMessage[reviewData.status]} successfully!`);
+      return true;
+    } catch (error) {
+      set({ isLoading: false });
+      const message = error.response?.data?.message || 'Failed to update project status';
+      toast.error(message);
+      return false;
     }
   },
 
@@ -111,7 +169,7 @@ export const useProjectStore = create((set, get) => ({
     try {
       await api.delete(`/projects/${projectId}`);
       
-      // Remove project from the list
+      // Remove project from both lists
       set(state => ({
         projects: state.projects.filter(project => project.id !== projectId),
         allProjects: state.allProjects.filter(project => project.id !== projectId)
@@ -121,45 +179,6 @@ export const useProjectStore = create((set, get) => ({
       return { success: true };
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to delete project';
-      toast.error(message);
-      return { success: false, error: message };
-    }
-  },
-
-  // Admin: Get all projects
-  getAllProjects: async () => {
-    try {
-      set({ isLoading: true });
-      const response = await api.get('/projects/admin');
-      set({ 
-        allProjects: response.data.projects,
-        isLoading: false 
-      });
-    } catch (error) {
-      set({ isLoading: false });
-      console.error('Get all projects error:', error);
-      toast.error('Failed to fetch all projects');
-    }
-  },
-
-  // Admin: Update project status
-  updateProjectStatus: async (projectId, status) => {
-    try {
-      await api.put(`/projects/${projectId}/status`, { status });
-      
-      // Update project status in the list
-      set(state => ({
-        allProjects: state.allProjects.map(project => 
-          project.id === projectId 
-            ? { ...project, status }
-            : project
-        )
-      }));
-      
-      toast.success(`Project ${status} successfully!`);
-      return { success: true };
-    } catch (error) {
-      const message = error.response?.data?.message || 'Failed to update project status';
       toast.error(message);
       return { success: false, error: message };
     }
