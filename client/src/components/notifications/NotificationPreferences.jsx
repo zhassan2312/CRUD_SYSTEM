@@ -22,7 +22,7 @@ import {
   Save as SaveIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material';
-import { useNotificationStore } from '../../store/useNotificationStore';
+import { useNotificationStore } from '../../store/notificationStore';
 
 const NotificationPreferences = () => {
   const [localPreferences, setLocalPreferences] = useState({

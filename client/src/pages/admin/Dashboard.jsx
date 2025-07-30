@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
 import { useProjectStore } from '../../store/projectStore';
 import { useTeacherStore } from '../../store/teacherStore';
 import { useAuthStore } from '../../store/authStore';
+import FileStatistics from '../../components/admin/FileStatistics';
 import PeopleIcon from '@mui/icons-material/People';
 import SchoolIcon from '@mui/icons-material/School';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -210,6 +211,14 @@ const AdminDashboard = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* File Statistics Section */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h5" gutterBottom>
+          File Management Statistics
+        </Typography>
+        <FileStatistics />
+      </Box>
 
       {/* Recent Projects Table */}
       <Paper sx={{ width: '100%', overflow: 'hidden' }}>

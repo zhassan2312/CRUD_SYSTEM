@@ -21,6 +21,7 @@ import { useAuthStore } from '../../store/authStore';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import PeopleIcon from '@mui/icons-material/People';
 import SchoolIcon from '@mui/icons-material/School';
 
@@ -168,6 +169,13 @@ const Dashboard = () => {
                   </CardContent>
                   
                   <CardActions>
+                    <Button
+                      size="small"
+                      startIcon={<VisibilityIcon />}
+                      onClick={() => navigate(`/project/${project.id}`)}
+                    >
+                      View Details
+                    </Button>
                     <Button
                       size="small"
                       startIcon={<DeleteIcon />}

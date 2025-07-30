@@ -14,7 +14,7 @@ import {
 } from '@mui/icons-material';
 import AdvancedSearch from '../components/search/AdvancedSearch';
 import SearchResults from '../components/search/SearchResults';
-import { useSearchStore } from '../store/useSearchStore';
+import { useSearchStore } from '../store/searchStore';
 import { useAuthStore } from '../store/authStore';
 
 const SearchPage = () => {

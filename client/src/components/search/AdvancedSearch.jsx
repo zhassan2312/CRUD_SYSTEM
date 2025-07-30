@@ -26,7 +26,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { useSearchStore } from '../../store/useSearchStore';
+import { useSearchStore } from '../../store/searchStore';
 
 const AdvancedSearch = ({ onSearch }) => {
   const [showFilters, setShowFilters] = useState(false);

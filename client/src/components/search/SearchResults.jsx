@@ -27,7 +27,7 @@ import {
   School as SchoolIcon
 } from '@mui/icons-material';
 import ProjectStatusBadge from '../ProjectStatusBadge';
-import { useSearchStore } from '../../store/useSearchStore';
+import { useSearchStore } from '../../store/searchStore';
 
 const SearchResults = ({ onViewProject }) => {
   const {

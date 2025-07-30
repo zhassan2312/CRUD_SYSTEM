@@ -12,6 +12,7 @@ import EmailVerification from './pages/EmailVerification';
 // User Components
 import UserDashboard from './pages/user/Dashboard';
 import AddProject from './pages/user/AddProject';
+import ProjectDetails from './pages/user/ProjectDetails';
 import UserProfile from './pages/user/UserProfile';
 import SearchPage from './pages/SearchPage';
 
@@ -59,6 +60,14 @@ function App() {
         <ProtectedRoute requiredRole="user">
           <Layout>
             <AddProject />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/project/:projectId" element={
+        <ProtectedRoute requiredRole="user">
+          <Layout>
+            <ProjectDetails />
           </Layout>
         </ProtectedRoute>
       } />
