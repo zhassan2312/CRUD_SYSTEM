@@ -18,6 +18,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import SchoolIcon from '@mui/icons-material/School';
+import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 
@@ -79,6 +80,14 @@ const Layout = ({ children }) => {
                 >
                   Teachers
                 </Button>
+                <Button
+                  color="inherit"
+                  startIcon={<SearchIcon />}
+                  onClick={() => navigate('/search')}
+                  variant={location.pathname === '/search' ? 'outlined' : 'text'}
+                >
+                  Search
+                </Button>
               </>
             ) : (
               <>
@@ -97,6 +106,14 @@ const Layout = ({ children }) => {
                   variant={location.pathname === '/project' ? 'outlined' : 'text'}
                 >
                   Add Project
+                </Button>
+                <Button
+                  color="inherit"
+                  startIcon={<SearchIcon />}
+                  onClick={() => navigate('/search')}
+                  variant={location.pathname === '/search' ? 'outlined' : 'text'}
+                >
+                  Search
                 </Button>
               </>
             )}

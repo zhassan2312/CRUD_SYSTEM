@@ -530,4 +530,175 @@ export const deleteProject = async (req, res) => {
   }
 };
 
+// Advanced search across projects
+export const searchProjects = async (req, res) => {
+  try {
+    const {
+      q: searchQuery = '',
+      status = '',
+      supervisor = '',
+      startDate = '',
+      endDate = '',
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      page = 1,
+      limit = 10
+    } = req.query;
 
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    const projectsRef = collection(db, 'projects');
+    let queries = [];
+
+    // Base query - if not admin, only show user's projects
+    if (userRole !== 'admin') {
+      queries.push(where('createdBy', '==', userId));
+    }
+
+    // Status filter
+    if (status) {
+      queries.push(where('status', '==', status));
+    }
+
+    // Supervisor filter
+    if (supervisor) {
+      queries.push(where('supervisor', '==', supervisor));
+    }
+
+    // Date range filter
+    if (startDate) {
+      queries.push(where('createdAt', '>=', startDate));
+    }
+    if (endDate) {
+      queries.push(where('createdAt', '<=', endDate));
+    }
+
+    // Build Firestore query
+    let q = query(projectsRef, ...queries);
+
+    // Add sorting
+    if (sortBy && ['createdAt', 'updatedAt', 'title', 'status'].includes(sortBy)) {
+      q = query(q, orderBy(sortBy, sortOrder === 'asc' ? 'asc' : 'desc'));
+    }
+
+    const snapshot = await getDocs(q);
+    let projects = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    // Client-side text search (since Firestore doesn't support full-text search)
+    if (searchQuery) {
+      const searchTerm = searchQuery.toLowerCase();
+      projects = projects.filter(project => {
+        return (
+          project.title?.toLowerCase().includes(searchTerm) ||
+          project.description?.toLowerCase().includes(searchTerm) ||
+          project.teamMembers?.some(member => 
+            member.name?.toLowerCase().includes(searchTerm) ||
+            member.email?.toLowerCase().includes(searchTerm)
+          ) ||
+          project.supervisorName?.toLowerCase().includes(searchTerm)
+        );
+      });
+    }
+
+    // Pagination
+    const totalResults = projects.length;
+    const startIndex = (parseInt(page) - 1) * parseInt(limit);
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedProjects = projects.slice(startIndex, endIndex);
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalResults / parseInt(limit));
+    const hasNextPage = parseInt(page) < totalPages;
+    const hasPrevPage = parseInt(page) > 1;
+
+    res.status(200).json({
+      message: "Search completed successfully",
+      data: {
+        projects: paginatedProjects,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages,
+          totalResults,
+          hasNextPage,
+          hasPrevPage,
+          limit: parseInt(limit)
+        },
+        searchCriteria: {
+          query: searchQuery,
+          status,
+          supervisor,
+          startDate,
+          endDate,
+          sortBy,
+          sortOrder
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Search projects error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get search filters data (for dropdowns)
+export const getSearchFilters = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Get unique statuses
+    const projectsRef = collection(db, 'projects');
+    let statusQuery = projectsRef;
+    
+    if (userRole !== 'admin') {
+      statusQuery = query(projectsRef, where('createdBy', '==', userId));
+    }
+
+    const projectsSnapshot = await getDocs(statusQuery);
+    const projects = projectsSnapshot.docs.map(doc => doc.data());
+
+    // Extract unique values
+    const statuses = [...new Set(projects.map(p => p.status).filter(Boolean))];
+    const supervisors = [...new Set(projects.map(p => ({
+      id: p.supervisor,
+      name: p.supervisorName
+    })).filter(s => s.id))];
+
+    // Get teachers for supervisor dropdown
+    const teachersRef = collection(db, 'teachers');
+    const teachersSnapshot = await getDocs(teachersRef);
+    const teachers = teachersSnapshot.docs.map(doc => ({
+      id: doc.id,
+      name: doc.data().fullName || doc.data().name
+    }));
+
+    res.status(200).json({
+      message: "Filter options retrieved successfully",
+      filters: {
+        statuses: [
+          'pending',
+          'under-review', 
+          'approved',
+          'rejected',
+          'revision-required'
+        ],
+        supervisors: teachers,
+        dateRange: {
+          earliest: projects.length > 0 ? 
+            Math.min(...projects.map(p => new Date(p.createdAt).getTime())) : 
+            new Date().getTime(),
+          latest: new Date().getTime()
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Get search filters error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

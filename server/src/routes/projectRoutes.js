@@ -6,7 +6,9 @@ import {
   uploadProjectImage,
   getAllProjects,
   updateProjectStatus,
-  deleteProject
+  deleteProject,
+  searchProjects,
+  getSearchFilters
 } from "../controllers/projectController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { checkRole } from "../middlewares/roleMiddleware.js";
@@ -37,6 +39,8 @@ router.use(authMiddleware);
 
 // User project routes
 router.get('/', getAllProjectsForUser);
+router.get('/search', searchProjects);
+router.get('/search/filters', getSearchFilters);
 router.post('/', upload.single('projectImage'), validate(projectSchema), createProject);
 router.post('/:projectId/upload-image', upload.single('projectImage'), uploadProjectImage);
 router.delete('/:projectId', deleteProject);

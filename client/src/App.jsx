@@ -13,6 +13,7 @@ import EmailVerification from './pages/EmailVerification';
 import UserDashboard from './pages/user/Dashboard';
 import AddProject from './pages/user/AddProject';
 import UserProfile from './pages/user/UserProfile';
+import SearchPage from './pages/SearchPage';
 
 // Admin Components
 import AdminDashboard from './pages/admin/Dashboard';
@@ -66,6 +67,14 @@ function App() {
         <ProtectedRoute requiredRole="user">
           <Layout>
             <UserProfile />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/search" element={
+        <ProtectedRoute requiredRole="user">
+          <Layout>
+            <SearchPage />
           </Layout>
         </ProtectedRoute>
       } />
