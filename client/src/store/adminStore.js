@@ -49,6 +49,19 @@ const useAdminStore = create(
         lastFetched: null
       },
 
+      // System Logs State
+      systemLogs: {
+        data: [],
+        loading: false,
+        error: null,
+        pagination: {
+          page: 1,
+          limit: 25,
+          total: 0,
+          totalPages: 0
+        }
+      },
+
       // File Statistics Actions
       fetchFileStatistics: async () => {
         const state = get();
@@ -289,6 +302,95 @@ const useAdminStore = create(
         }
       },
 
+      // Update user role
+      updateUserRole: async (userId, role) => {
+        try {
+          const response = await api.put(`/admin/users/${userId}/role`, { role });
+          
+          // Update user in the users list
+          set((state) => ({
+            users: {
+              ...state.users,
+              data: state.users.data.map(user =>
+                user.id === userId ? { ...user, role, updatedAt: new Date().toISOString() } : user
+              )
+            }
+          }));
+
+          return response.data;
+        } catch (error) {
+          throw error;
+        }
+      },
+
+      // Update user status
+      updateUserStatus: async (userId, status) => {
+        try {
+          const response = await api.put(`/admin/users/${userId}/status`, { status });
+          
+          // Update user in the users list
+          set((state) => ({
+            users: {
+              ...state.users,
+              data: state.users.data.map(user =>
+                user.id === userId ? { ...user, status, updatedAt: new Date().toISOString() } : user
+              )
+            }
+          }));
+
+          return response.data;
+        } catch (error) {
+          throw error;
+        }
+      },
+
+      // Delete user
+      deleteUser: async (userId) => {
+        try {
+          const response = await api.delete(`/admin/users/${userId}`);
+          
+          // Remove user from the users list
+          set((state) => ({
+            users: {
+              ...state.users,
+              data: state.users.data.filter(user => user.id !== userId)
+            }
+          }));
+
+          return response.data;
+        } catch (error) {
+          throw error;
+        }
+      },
+
+      // Bulk update projects
+      bulkUpdateProjects: async (projectIds, action, status, reviewComment) => {
+        try {
+          const response = await api.put('/admin/projects/bulk', {
+            projectIds,
+            action,
+            status,
+            reviewComment
+          });
+
+          // Update projects in allProjects
+          set((state) => ({
+            allProjects: {
+              ...state.allProjects,
+              data: state.allProjects.data.map(project =>
+                projectIds.includes(project.id)
+                  ? { ...project, status, reviewComment, updatedAt: new Date().toISOString() }
+                  : project
+              )
+            }
+          }));
+
+          return response.data;
+        } catch (error) {
+          throw error;
+        }
+      },
+
       // Delete Project Action
       deleteProject: async (projectId) => {
         try {
@@ -304,6 +406,55 @@ const useAdminStore = create(
 
           return response.data;
         } catch (error) {
+          throw error;
+        }
+      },
+
+      // Fetch system logs
+      fetchSystemLogs: async (page = 1, limit = 25, type = '') => {
+        set((state) => ({
+          systemLogs: {
+            ...state.systemLogs,
+            loading: true,
+            error: null
+          }
+        }));
+
+        try {
+          const params = new URLSearchParams({
+            page: page.toString(),
+            limit: limit.toString(),
+            ...(type && { type })
+          });
+
+          const response = await api.get(`/admin/logs?${params}`);
+          
+          set((state) => ({
+            systemLogs: {
+              data: response.data.logs,
+              loading: false,
+              error: null,
+              pagination: {
+                page: response.data.pagination?.currentPage || page,
+                limit: response.data.pagination?.limit || limit,
+                total: response.data.pagination?.total || 0,
+                totalPages: response.data.pagination?.totalPages || 0
+              }
+            }
+          }));
+
+          return response.data;
+        } catch (error) {
+          const errorMessage = error.response?.data?.message || 'Failed to fetch system logs';
+          
+          set((state) => ({
+            systemLogs: {
+              ...state.systemLogs,
+              loading: false,
+              error: errorMessage
+            }
+          }));
+
           throw error;
         }
       },

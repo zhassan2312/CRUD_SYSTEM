@@ -21,6 +21,8 @@ import SearchPage from './pages/SearchPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import Teachers from './pages/admin/Teachers';
 import ProjectReview from './pages/admin/ProjectReview';
+import Users from './pages/admin/Users';
+import BulkProjectManagement from './pages/admin/BulkProjectManagement';
 
 // Components
 import Sidebar from './components/layout/Sidebar';
@@ -111,6 +113,22 @@ function App() {
         <ProtectedRoute requiredRole="admin">
           <Sidebar darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
             <ProjectReview />
+          </Sidebar>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/admin/users" element={
+        <ProtectedRoute requiredRole="admin">
+          <Sidebar darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
+            <Users />
+          </Sidebar>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/admin/projects/bulk" element={
+        <ProtectedRoute requiredRole="admin">
+          <Sidebar darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
+            <BulkProjectManagement />
           </Sidebar>
         </ProtectedRoute>
       } />

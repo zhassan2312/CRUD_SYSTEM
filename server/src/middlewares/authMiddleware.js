@@ -47,3 +47,27 @@ export const authMiddleware = async (req, res, next) => {
     return res.status(500).json({ message: 'Authentication error' });
   }
 };
+
+// Admin authentication middleware
+export const authenticateAdmin = async (req, res, next) => {
+  try {
+    // First, authenticate the user
+    await authMiddleware(req, res, () => {});
+    
+    // Then check if user is admin
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Access denied. Admin privileges required.' 
+      });
+    }
+    
+    next();
+  } catch (error) {
+    console.error('Admin auth middleware error:', error);
+    return res.status(500).json({ 
+      success: false,
+      message: 'Authentication error' 
+    });
+  }
+};

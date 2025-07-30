@@ -131,25 +131,13 @@ const ModernSidebar = ({ children, darkMode, toggleDarkMode }) => {
       return [
         ...commonItems,
         {
-          text: 'Analytics',
-          icon: <Analytics />,
-          expandable: true,
-          key: 'analytics',
-          children: [
-            { text: 'File Statistics', path: '/admin/analytics/files' },
-            { text: 'User Activity', path: '/admin/analytics/users' },
-            { text: 'Project Reports', path: '/admin/analytics/projects' },
-          ]
-        },
-        {
           text: 'Project Management',
           icon: <Assignment />,
           expandable: true,
           key: 'projects',
           children: [
             { text: 'All Projects', path: '/admin/projects' },
-            { text: 'Pending Review', path: '/admin/projects/pending' },
-            { text: 'Approved Projects', path: '/admin/projects/approved' },
+            { text: 'Bulk Operations', path: '/admin/projects/bulk' },
           ]
         },
         {
