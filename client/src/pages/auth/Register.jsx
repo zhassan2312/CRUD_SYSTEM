@@ -72,9 +72,14 @@ const Register = () => {
     }
 
     const result = await register(formData);
-    if (result.success) {
-      // Navigation is handled by App.jsx based on user role
-      window.location.reload(); // Force reload to update auth state
+    if (result.success && result.verificationRequired) {
+      // Redirect to a verification page or show verification message
+      navigate('/email-verification', { 
+        state: { 
+          email: data.email,
+          message: 'Registration successful! Please check your email to verify your account.' 
+        } 
+      });
     }
   };
 

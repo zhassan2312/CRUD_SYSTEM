@@ -7,6 +7,7 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
+import EmailVerification from './pages/EmailVerification';
 
 // User Components
 import UserDashboard from './pages/user/Dashboard';
@@ -40,6 +41,8 @@ function App() {
       <Route path="/register" element={!user ? <Register /> : <Navigate to={user.role === 'admin' ? '/admin' : '/'} />} />
       <Route path="/forgot-password" element={!user ? <ForgotPassword /> : <Navigate to={user.role === 'admin' ? '/admin' : '/'} />} />
       <Route path="/reset-password" element={!user ? <ResetPassword /> : <Navigate to={user.role === 'admin' ? '/admin' : '/'} />} />
+      <Route path="/email-verification" element={<EmailVerification />} />
+      <Route path="/verify-email" element={<EmailVerification />} />
       
       {/* Protected Routes */}
       <Route path="/" element={

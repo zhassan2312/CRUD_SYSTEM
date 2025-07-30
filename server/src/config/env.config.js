@@ -21,6 +21,7 @@ const env={
     JWT_SECRET: process.env.JWT_SECRET || 'your_jwt_secret_key',
     NODE_ENV: process.env.NODE_ENV || 'development',
     GCLOUD_STORAGE_BUCKET: process.env.GCLOUD_STORAGE_BUCKET,
+    FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
 }
 
 // Log configuration status (without sensitive data)

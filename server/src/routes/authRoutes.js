@@ -6,7 +6,8 @@ import {
   forgotPassword,
   resetPassword,
   verifyEmail,
-  logoutUser
+  logoutUser,
+  resendVerificationEmail
 } from "../controllers/authController.js";
 import { validate } from "../middlewares/validateMiddleware.js";
 import {
@@ -41,6 +42,7 @@ router.post('/login', loginUser);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.post('/verify-email', verifyEmail);
+router.post('/resend-verification', resendVerificationEmail);
 router.post('/logout', logoutUser);
 
 export default router;

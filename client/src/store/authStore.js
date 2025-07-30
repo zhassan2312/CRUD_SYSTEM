@@ -58,32 +58,20 @@ export const useAuthStore = create((set, get) => ({
           },
         });
 
-        set({ 
-          user: response.data.user, 
-          isAuthenticated: true, 
-          isLoading: false 
-        });
+        // Don't auto-authenticate, user needs to verify email first
+        set({ isLoading: false });
         
-        // Store user info in localStorage for persistence
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        
-        toast.success('Registration successful!');
-        return { success: true };
+        toast.success('Registration successful! Please check your email to verify your account.');
+        return { success: true, verificationRequired: true };
       } else {
         // Use JSON for registration without profile picture
         const response = await api.post('/auth/register', userData);
 
-        set({ 
-          user: response.data.user, 
-          isAuthenticated: true, 
-          isLoading: false 
-        });
+        // Don't auto-authenticate, user needs to verify email first
+        set({ isLoading: false });
         
-        // Store user info in localStorage for persistence
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        
-        toast.success('Registration successful!');
-        return { success: true };
+        toast.success('Registration successful! Please check your email to verify your account.');
+        return { success: true, verificationRequired: true };
       }
     } catch (error) {
       set({ isLoading: false });
@@ -112,7 +100,20 @@ export const useAuthStore = create((set, get) => ({
       return { success: true };
     } catch (error) {
       set({ isLoading: false });
-      const message = error.response?.data?.message || 'Login failed';
+      const errorData = error.response?.data;
+      const message = errorData?.message || 'Login failed';
+      
+      // Handle specific verification error
+      if (errorData?.requiresVerification) {
+        toast.error(message);
+        return { 
+          success: false, 
+          error: message, 
+          requiresVerification: true,
+          email: credentials.email 
+        };
+      }
+      
       toast.error(message);
       return { success: false, error: message };
     }
@@ -166,6 +167,44 @@ export const useAuthStore = create((set, get) => ({
     } catch (error) {
       set({ isLoading: false });
       const message = error.response?.data?.message || 'Password reset failed';
+      toast.error(message);
+      return { success: false, error: message };
+    }
+  },
+
+  // Verify email
+  verifyEmail: async (token) => {
+    try {
+      set({ isLoading: true });
+      const response = await api.post('/auth/verify-email', { token });
+      set({ isLoading: false });
+      toast.success('Email verified successfully! You can now login.');
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      set({ isLoading: false });
+      const message = error.response?.data?.message || 'Email verification failed';
+      toast.error(message);
+      return { success: false, error: message };
+    }
+  },
+
+  // Resend verification email
+  resendVerificationEmail: async (email) => {
+    try {
+      set({ isLoading: true });
+      const response = await api.post('/auth/resend-verification', { email });
+      set({ isLoading: false });
+      
+      if (response.data.alreadyVerified) {
+        toast.info('Email is already verified. You can login now.');
+        return { success: true, alreadyVerified: true };
+      }
+      
+      toast.success('Verification email sent! Please check your inbox.');
+      return { success: true };
+    } catch (error) {
+      set({ isLoading: false });
+      const message = error.response?.data?.message || 'Failed to resend verification email';
       toast.error(message);
       return { success: false, error: message };
     }

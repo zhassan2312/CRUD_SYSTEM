@@ -40,6 +40,15 @@ const Login = () => {
     if (result.success) {
       // Navigation is handled by App.jsx based on user role
       window.location.reload(); // Force reload to update auth state
+    } else if (result.requiresVerification) {
+      // Redirect to verification page if email not verified
+      navigate('/email-verification', { 
+        state: { 
+          email: data.email,
+          message: result.error,
+          fromLogin: true
+        } 
+      });
     }
   };
 
