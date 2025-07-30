@@ -22,6 +22,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PeopleIcon from '@mui/icons-material/People';
+import SchoolIcon from '@mui/icons-material/School';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -98,7 +99,7 @@ const Dashboard = () => {
         <>
           <Grid container spacing={3}>
             {projects.map((project) => (
-              <Grid item xs={12} sm={6} md={4} key={project.id}>
+              <Grid xs={12} sm={6} md={4} key={project.id}>
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   {project.imageUrl && (
                     <CardMedia
@@ -140,6 +141,24 @@ const Dashboard = () => {
                             </Avatar>
                           ))}
                         </AvatarGroup>
+                      </Box>
+                    )}
+
+                    {project.supervisor && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <SchoolIcon fontSize="small" color="action" />
+                        <Typography variant="body2" color="text.secondary">
+                          Supervisor: {project.supervisor.name || project.supervisor.fullName || 'N/A'}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {project.coSupervisor && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <SchoolIcon fontSize="small" color="action" />
+                        <Typography variant="body2" color="text.secondary">
+                          Co-Supervisor: {project.coSupervisor.name || project.coSupervisor.fullName || 'N/A'}
+                        </Typography>
                       </Box>
                     )}
 

@@ -27,32 +27,47 @@ export const useProjectStore = create((set, get) => ({
   createProject: async (projectData) => {
     try {
       set({ isLoading: true });
-      const formData = new FormData();
       
-      Object.keys(projectData).forEach(key => {
-        if (key === 'projectImage' && projectData[key]) {
-          formData.append('projectImage', projectData[key]);
-        } else if (key === 'students') {
-          formData.append('students', JSON.stringify(projectData[key]));
-        } else {
-          formData.append(key, projectData[key]);
-        }
-      });
+      // If there's a project image, use FormData, otherwise use JSON
+      if (projectData.projectImage) {
+        const formData = new FormData();
+        Object.keys(projectData).forEach(key => {
+          if (key === 'projectImage' && projectData[key]) {
+            formData.append('projectImage', projectData[key]);
+          } else if (key === 'students') {
+            formData.append('students', JSON.stringify(projectData[key]));
+          } else {
+            formData.append(key, projectData[key]);
+          }
+        });
 
-      const response = await api.post('/projects', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+        const response = await api.post('/projects', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
 
-      // Add new project to the list
-      set(state => ({
-        projects: [response.data.project, ...state.projects],
-        isLoading: false
-      }));
-      
-      toast.success('Project created successfully!');
-      return { success: true };
+        // Add new project to the list
+        set(state => ({
+          projects: [response.data.project, ...state.projects],
+          isLoading: false
+        }));
+        
+        toast.success('Project created successfully!');
+        return { success: true };
+      } else {
+        // Use JSON for project without image
+        const response = await api.post('/projects', projectData);
+
+        // Add new project to the list
+        set(state => ({
+          projects: [response.data.project, ...state.projects],
+          isLoading: false
+        }));
+        
+        toast.success('Project created successfully!');
+        return { success: true };
+      }
     } catch (error) {
       set({ isLoading: false });
       const message = error.response?.data?.message || 'Failed to create project';

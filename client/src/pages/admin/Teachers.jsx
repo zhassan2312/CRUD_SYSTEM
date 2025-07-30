@@ -17,9 +17,9 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Grid,
   CircularProgress,
-  Fab
+  Fab,
+  Grid
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
@@ -189,15 +189,15 @@ const Teachers = () => {
                     <TableCell>
                       <Avatar
                         src={teacher.profileUrl}
-                        alt={teacher.name}
+                        alt={teacher.fullName}
                         sx={{ width: 40, height: 40 }}
                       >
-                        {teacher.name.charAt(0).toUpperCase()}
+                        {teacher.fullName ? teacher.fullName.charAt(0).toUpperCase() : '?'}
                       </Avatar>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" fontWeight="bold">
-                        {teacher.name}
+                        {teacher.fullName}
                       </Typography>
                     </TableCell>
                     <TableCell>{teacher.email}</TableCell>
@@ -261,7 +261,7 @@ const Teachers = () => {
             </Box>
 
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Controller
                   name="name"
                   control={control}
@@ -278,7 +278,7 @@ const Teachers = () => {
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Controller
                   name="email"
                   control={control}
@@ -296,7 +296,7 @@ const Teachers = () => {
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Controller
                   name="department"
                   control={control}
@@ -312,7 +312,7 @@ const Teachers = () => {
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Controller
                   name="specialization"
                   control={control}

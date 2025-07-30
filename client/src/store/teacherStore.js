@@ -26,30 +26,45 @@ export const useTeacherStore = create((set, get) => ({
   addTeacher: async (teacherData) => {
     try {
       set({ isLoading: true });
-      const formData = new FormData();
       
-      Object.keys(teacherData).forEach(key => {
-        if (key === 'profileImage' && teacherData[key]) {
-          formData.append('profileImage', teacherData[key]);
-        } else {
-          formData.append(key, teacherData[key]);
-        }
-      });
+      // If there's a profile image, use FormData, otherwise use JSON
+      if (teacherData.profileImage) {
+        const formData = new FormData();
+        Object.keys(teacherData).forEach(key => {
+          if (key === 'profileImage' && teacherData[key]) {
+            formData.append('profileImage', teacherData[key]);
+          } else {
+            formData.append(key, teacherData[key]);
+          }
+        });
 
-      const response = await api.post('/teachers', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+        const response = await api.post('/teachers', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
 
-      // Add new teacher to the list
-      set(state => ({
-        teachers: [...state.teachers, response.data.teacher],
-        isLoading: false
-      }));
-      
-      toast.success('Teacher added successfully!');
-      return { success: true };
+        // Add new teacher to the list
+        set(state => ({
+          teachers: [...state.teachers, response.data.teacher],
+          isLoading: false
+        }));
+        
+        toast.success('Teacher added successfully!');
+        return { success: true };
+      } else {
+        // Use JSON for teacher without image
+        const response = await api.post('/teachers', teacherData);
+
+        // Add new teacher to the list
+        set(state => ({
+          teachers: [...state.teachers, response.data.teacher],
+          isLoading: false
+        }));
+        
+        toast.success('Teacher added successfully!');
+        return { success: true };
+      }
     } catch (error) {
       set({ isLoading: false });
       const message = error.response?.data?.message || 'Failed to add teacher';
@@ -62,32 +77,49 @@ export const useTeacherStore = create((set, get) => ({
   updateTeacher: async (teacherId, teacherData) => {
     try {
       set({ isLoading: true });
-      const formData = new FormData();
       
-      Object.keys(teacherData).forEach(key => {
-        if (key === 'profileImage' && teacherData[key]) {
-          formData.append('profileImage', teacherData[key]);
-        } else {
-          formData.append(key, teacherData[key]);
-        }
-      });
+      // If there's a profile image, use FormData, otherwise use JSON
+      if (teacherData.profileImage) {
+        const formData = new FormData();
+        Object.keys(teacherData).forEach(key => {
+          if (key === 'profileImage' && teacherData[key]) {
+            formData.append('profileImage', teacherData[key]);
+          } else {
+            formData.append(key, teacherData[key]);
+          }
+        });
 
-      const response = await api.put(`/teachers/${teacherId}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+        const response = await api.put(`/teachers/${teacherId}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
 
-      // Update teacher in the list
-      set(state => ({
-        teachers: state.teachers.map(teacher => 
-          teacher.id === teacherId ? response.data.teacher : teacher
-        ),
-        isLoading: false
-      }));
-      
-      toast.success('Teacher updated successfully!');
-      return { success: true };
+        // Update teacher in the list
+        set(state => ({
+          teachers: state.teachers.map(teacher => 
+            teacher.id === teacherId ? response.data.teacher : teacher
+          ),
+          isLoading: false
+        }));
+        
+        toast.success('Teacher updated successfully!');
+        return { success: true };
+      } else {
+        // Use JSON for teacher without image
+        const response = await api.put(`/teachers/${teacherId}`, teacherData);
+
+        // Update teacher in the list
+        set(state => ({
+          teachers: state.teachers.map(teacher => 
+            teacher.id === teacherId ? response.data.teacher : teacher
+          ),
+          isLoading: false
+        }));
+        
+        toast.success('Teacher updated successfully!');
+        return { success: true };
+      }
     } catch (error) {
       set({ isLoading: false });
       const message = error.response?.data?.message || 'Failed to update teacher';

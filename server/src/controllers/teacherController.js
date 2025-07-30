@@ -39,16 +39,24 @@ const uploadTeacherImage = async (file, teacherId) => {
 export const getAllTeachers = async (req, res) => {
   try {
     const teachersRef = collection(db, 'teachers');
-    const q = query(teachersRef, orderBy('name', 'asc'));
-    
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocs(teachersRef);
     const teachers = [];
     
     snapshot.forEach((doc) => {
+      const teacherData = doc.data();
       teachers.push({
         id: doc.id,
-        ...doc.data()
+        ...teacherData,
+        // Ensure fullName property exists for frontend compatibility
+        fullName: teacherData.fullName || teacherData.name || ''
       });
+    });
+
+    // Sort by fullName on the client side with null checks
+    teachers.sort((a, b) => {
+      const nameA = a.fullName || '';
+      const nameB = b.fullName || '';
+      return nameA.localeCompare(nameB);
     });
 
     res.status(200).json({
@@ -94,6 +102,7 @@ export const addTeacher = async (req, res) => {
     // Create teacher data
     const teacherData = {
       name,
+      fullName: name, // Add fullName alias for frontend compatibility
       email,
       department: department || '',
       specialization: specialization || '',
@@ -181,7 +190,10 @@ export const updateTeacher = async (req, res) => {
       updatedAt: new Date().toISOString()
     };
 
-    if (name) updateData.name = name;
+    if (name) {
+      updateData.name = name;
+      updateData.fullName = name; // Keep fullName alias in sync
+    }
     if (email) updateData.email = email;
     if (department !== undefined) updateData.department = department;
     if (specialization !== undefined) updateData.specialization = specialization;

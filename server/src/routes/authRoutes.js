@@ -36,10 +36,10 @@ const upload = multer({
 });
 
 // Auth routes
-router.post('/register', upload.single('profilePic'), validate(userRegistrationSchema), registerUser);
-router.post('/login', validate(userLoginSchema), loginUser);
-router.post('/forgot-password', validate(emailSchema), forgotPassword);
-router.post('/reset-password', validate(passwordResetSchema), resetPassword);
+router.post('/register', upload.single('profilePic'), registerUser);
+router.post('/login', loginUser);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 router.post('/verify-email', verifyEmail);
 router.post('/logout', logoutUser);
 

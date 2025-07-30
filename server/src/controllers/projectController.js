@@ -44,19 +44,49 @@ export const getAllProjectsForUser = async (req, res) => {
     const projectsRef = collection(db, 'projects');
     const q = query(
       projectsRef, 
-      where('createdBy', '==', userId),
-      orderBy('createdAt', 'desc')
+      where('createdBy', '==', userId)
     );
     
     const snapshot = await getDocs(q);
     const projects = [];
     
-    snapshot.forEach((doc) => {
-      projects.push({
+    // Get all teachers for reference
+    const teachersRef = collection(db, 'teachers');
+    const teachersSnapshot = await getDocs(teachersRef);
+    const teachersMap = {};
+    
+    teachersSnapshot.forEach((doc) => {
+      teachersMap[doc.id] = {
         id: doc.id,
         ...doc.data()
+      };
+    });
+    
+    snapshot.forEach((doc) => {
+      const projectData = doc.data();
+      
+      // Populate supervisor and co-supervisor details
+      const supervisor = teachersMap[projectData.supervisorId];
+      const coSupervisor = projectData.coSupervisorId ? teachersMap[projectData.coSupervisorId] : null;
+      
+      projects.push({
+        id: doc.id,
+        ...projectData,
+        supervisor: supervisor ? {
+          id: supervisor.id,
+          name: supervisor.name,
+          email: supervisor.email
+        } : null,
+        coSupervisor: coSupervisor ? {
+          id: coSupervisor.id,
+          name: coSupervisor.name,
+          email: coSupervisor.email
+        } : null
       });
     });
+
+    // Sort by createdAt on the client side
+    projects.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     res.status(200).json({
       message: "Projects retrieved successfully",
@@ -205,17 +235,63 @@ export const uploadProjectImage = async (req, res) => {
 export const getAllProjects = async (req, res) => {
   try {
     const projectsRef = collection(db, 'projects');
-    const q = query(projectsRef, orderBy('createdAt', 'desc'));
-    
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocs(projectsRef);
     const projects = [];
     
-    snapshot.forEach((doc) => {
-      projects.push({
+    // Get all teachers for reference
+    const teachersRef = collection(db, 'teachers');
+    const teachersSnapshot = await getDocs(teachersRef);
+    const teachersMap = {};
+    
+    teachersSnapshot.forEach((doc) => {
+      teachersMap[doc.id] = {
         id: doc.id,
         ...doc.data()
+      };
+    });
+    
+    // Get all users for student names
+    const usersRef = collection(db, 'users');
+    const usersSnapshot = await getDocs(usersRef);
+    const usersMap = {};
+    
+    usersSnapshot.forEach((doc) => {
+      usersMap[doc.id] = {
+        id: doc.id,
+        ...doc.data()
+      };
+    });
+    
+    snapshot.forEach((doc) => {
+      const projectData = doc.data();
+      
+      // Populate supervisor and co-supervisor details
+      const supervisor = teachersMap[projectData.supervisorId];
+      const coSupervisor = projectData.coSupervisorId ? teachersMap[projectData.coSupervisorId] : null;
+      
+      // Get student name from user who created the project
+      const student = usersMap[projectData.createdBy];
+      
+      projects.push({
+        id: doc.id,
+        ...projectData,
+        studentName: student ? student.name : 'Unknown Student',
+        studentEmail: student ? student.email : '',
+        supervisor: supervisor ? {
+          id: supervisor.id,
+          name: supervisor.name,
+          email: supervisor.email
+        } : null,
+        coSupervisor: coSupervisor ? {
+          id: coSupervisor.id,
+          name: coSupervisor.name,
+          email: coSupervisor.email
+        } : null
       });
     });
+
+    // Sort by createdAt on the client side
+    projects.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     res.status(200).json({
       message: "All projects retrieved successfully",

@@ -11,11 +11,7 @@ export const useAuthStore = create((set, get) => ({
   checkAuth: async () => {
     try {
       set({ isLoading: true });
-      // For now, just check if we have a cookie/token by making any authenticated request
-      // You can create a specific /auth/me endpoint later if needed
-      const response = await api.get('/projects');
-      // If the request succeeds, we're authenticated but we need user info
-      // For simplicity, we'll store minimal user info in localStorage during login
+      // Check if we have user data in localStorage
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         set({ 
@@ -44,33 +40,51 @@ export const useAuthStore = create((set, get) => ({
   register: async (userData) => {
     try {
       set({ isLoading: true });
-      const formData = new FormData();
       
-      Object.keys(userData).forEach(key => {
-        if (key === 'profilePic' && userData[key]) {
-          formData.append('profilePic', userData[key]);
-        } else {
-          formData.append(key, userData[key]);
-        }
-      });
+      // If there's a profile picture, use FormData, otherwise use JSON
+      if (userData.profilePic) {
+        const formData = new FormData();
+        Object.keys(userData).forEach(key => {
+          if (key === 'profilePic' && userData[key]) {
+            formData.append('profilePic', userData[key]);
+          } else {
+            formData.append(key, userData[key]);
+          }
+        });
 
-      const response = await api.post('/auth/register', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+        const response = await api.post('/auth/register', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
 
-      set({ 
-        user: response.data.user, 
-        isAuthenticated: true, 
-        isLoading: false 
-      });
-      
-      // Store user info in localStorage for persistence
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      
-      toast.success('Registration successful!');
-      return { success: true };
+        set({ 
+          user: response.data.user, 
+          isAuthenticated: true, 
+          isLoading: false 
+        });
+        
+        // Store user info in localStorage for persistence
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        toast.success('Registration successful!');
+        return { success: true };
+      } else {
+        // Use JSON for registration without profile picture
+        const response = await api.post('/auth/register', userData);
+
+        set({ 
+          user: response.data.user, 
+          isAuthenticated: true, 
+          isLoading: false 
+        });
+        
+        // Store user info in localStorage for persistence
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        toast.success('Registration successful!');
+        return { success: true };
+      }
     } catch (error) {
       set({ isLoading: false });
       const message = error.response?.data?.message || 'Registration failed';

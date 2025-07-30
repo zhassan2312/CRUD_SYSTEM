@@ -5,7 +5,6 @@ import {
   TextField,
   Button,
   Paper,
-  Grid,
   FormControl,
   InputLabel,
   Select,
@@ -15,7 +14,7 @@ import {
   CardContent,
   CircularProgress,
   Autocomplete,
-  Avatar
+  Avatar,Grid
 } from '@mui/material';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -48,7 +47,6 @@ const AddProject = () => {
   const { teachers, getTeachers, isLoading: teachersLoading } = useTeacherStore();
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-
   const {
     control,
     handleSubmit,
@@ -157,7 +155,7 @@ const AddProject = () => {
 
           {/* Basic Information */}
           <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Controller
                 name="title"
                 control={control}
@@ -173,7 +171,7 @@ const AddProject = () => {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Controller
                 name="description"
                 control={control}
@@ -191,7 +189,7 @@ const AddProject = () => {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Controller
                 name="sustainability"
                 control={control}
@@ -216,7 +214,7 @@ const AddProject = () => {
               Supervisors
             </Typography>
             <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
+              <Grid sx={{ flexGrow: 1 }}>
                 <Controller
                   name="supervisorId"
                   control={control}
@@ -224,13 +222,15 @@ const AddProject = () => {
                     <Autocomplete
                       {...field}
                       options={teachers}
-                      getOptionLabel={(option) => option.name || ''}
+                      getOptionLabel={(option) => option.name || option.fullName || ''}
                       loading={teachersLoading}
                       onChange={(_, value) => field.onChange(value?.id || '')}
                       value={teachers.find(teacher => teacher.id === field.value) || null}
+                      fullWidth
                       renderInput={(params) => (
                         <TextField
                           {...params}
+                          fullWidth
                           label="Supervisor *"
                           error={!!errors.supervisorId}
                           helperText={errors.supervisorId?.message}
@@ -250,7 +250,7 @@ const AddProject = () => {
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid sx={{ flexGrow: 1 }}>
                 <Controller
                   name="coSupervisorId"
                   control={control}
@@ -258,23 +258,17 @@ const AddProject = () => {
                     <Autocomplete
                       {...field}
                       options={teachers}
-                      getOptionLabel={(option) => option.name || ''}
+                      getOptionLabel={(option) => option.name || option.fullName || ''}
                       loading={teachersLoading}
                       onChange={(_, value) => field.onChange(value?.id || '')}
                       value={teachers.find(teacher => teacher.id === field.value) || null}
+                      fullWidth
                       renderInput={(params) => (
                         <TextField
                           {...params}
+                          fullWidth
                           label="Co-Supervisor (Optional)"
-                          InputProps={{
-                            ...params.InputProps,
-                            endAdornment: (
-                              <>
-                                {teachersLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                                {params.InputProps.endAdornment}
-                              </>
-                            ),
-                          }}
+                            
                         />
                       )}
                     />
@@ -304,7 +298,7 @@ const AddProject = () => {
               <Card key={field.id} sx={{ mb: 2 }}>
                 <CardContent>
                   <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} md={5}>
+                    <Grid xs={12} md={5}>
                       <Controller
                         name={`students.${index}.name`}
                         control={control}
@@ -319,7 +313,7 @@ const AddProject = () => {
                         )}
                       />
                     </Grid>
-                    <Grid item xs={12} md={5}>
+                    <Grid xs={12} md={5}>
                       <Controller
                         name={`students.${index}.email`}
                         control={control}
@@ -335,7 +329,7 @@ const AddProject = () => {
                         )}
                       />
                     </Grid>
-                    <Grid item xs={12} md={2}>
+                    <Grid xs={12} md={2}>
                       <IconButton
                         color="error"
                         onClick={() => removeStudent(index)}
