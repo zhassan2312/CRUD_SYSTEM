@@ -146,9 +146,9 @@ const ModernSidebar = ({ children, darkMode, toggleDarkMode }) => {
           expandable: true,
           key: 'users',
           children: [
-            { text: 'All Users', path: '/admin/users' },
-            { text: 'Students', path: '/admin/users/students' },
+            { text: 'Students', path: '/admin/users' },
             { text: 'Teachers', path: '/admin/teachers' },
+            { text: 'Administrators', path: '/admin/admins' },
           ]
         },
         {

@@ -32,24 +32,25 @@ import {
   Snackbar,
 } from '@mui/material';
 import {
-  School,
+  AdminPanelSettings,
   PersonAdd,
   Edit,
   Delete,
   Search,
   FilterList,
-  AdminPanelSettings,
+  School,
   Person,
   Block,
   CheckCircle,
   Warning,
+  Security,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import useAdminStore from '../../store/adminStore';
 import PageContainer from '../../components/ui/PageContainer';
 import StatsCard from '../../components/ui/StatsCard';
 
-const TeachersManagement = () => {
+const AdminsManagement = () => {
   const {
     users,
     fetchUsers,
@@ -62,7 +63,7 @@ const TeachersManagement = () => {
 
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
-    role: 'teacher', // Only show teachers
+    role: 'admin', // Only show admins
     status: '',
     search: ''
   });
@@ -82,14 +83,14 @@ const TeachersManagement = () => {
   });
 
   useEffect(() => {
-    // Always filter for teachers only
-    const teacherFilters = { ...filters, role: 'teacher' };
-    fetchUsers(page, 10, teacherFilters);
+    // Always filter for admins only
+    const adminFilters = { ...filters, role: 'admin' };
+    fetchUsers(page, 10, adminFilters);
     fetchDashboardStats();
   }, [page, filters, fetchUsers, fetchDashboardStats]);
 
   const handleFilterChange = (field, value) => {
-    if (field === 'role') return; // Prevent changing role filter for teachers page
+    if (field === 'role') return; // Prevent changing role filter for admins page
     setFilters(prev => ({ ...prev, [field]: value }));
     setPage(1); // Reset to first page when filtering
   };
@@ -109,14 +110,14 @@ const TeachersManagement = () => {
         await updateUserRole(user.id, user.role);
         setSnackbar({
           open: true,
-          message: 'Teacher role updated successfully',
+          message: 'Admin role updated successfully',
           severity: 'success'
         });
       } else if (type === 'status') {
         await updateUserStatus(user.id, user.status);
         setSnackbar({
           open: true,
-          message: 'Teacher status updated successfully',
+          message: 'Admin status updated successfully',
           severity: 'success'
         });
       }
@@ -124,7 +125,7 @@ const TeachersManagement = () => {
     } catch (error) {
       setSnackbar({
         open: true,
-        message: error.response?.data?.message || 'Failed to update teacher',
+        message: error.response?.data?.message || 'Failed to update admin',
         severity: 'error'
       });
     }
@@ -135,14 +136,14 @@ const TeachersManagement = () => {
       await deleteUser(deleteDialog.user.id);
       setSnackbar({
         open: true,
-        message: 'Teacher deleted successfully',
+        message: 'Admin deleted successfully',
         severity: 'success'
       });
       setDeleteDialog({ open: false, user: null });
     } catch (error) {
       setSnackbar({
         open: true,
-        message: error.response?.data?.message || 'Failed to delete teacher',
+        message: error.response?.data?.message || 'Failed to delete admin',
         severity: 'error'
       });
     }
@@ -200,12 +201,12 @@ const TeachersManagement = () => {
 
   return (
     <PageContainer
-      title="Teacher Management"
-      subtitle="Manage teacher accounts, roles, and permissions"
+      title="Admin Management"
+      subtitle="Manage administrator accounts, roles, and permissions"
       showRefresh
       onRefresh={() => {
-        const teacherFilters = { ...filters, role: 'teacher' };
-        fetchUsers(page, 10, teacherFilters);
+        const adminFilters = { ...filters, role: 'admin' };
+        fetchUsers(page, 10, adminFilters);
         fetchDashboardStats();
       }}
     >
@@ -213,40 +214,40 @@ const TeachersManagement = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
           <StatsCard
-            title="Total Teachers"
-            value={userStats.teachers || 0}
-            icon={<School />}
-            trend={`+${Math.floor((userStats.teachers || 0) * 0.1)} this month`}
-            trendUp={true}
-            color="primary"
+            title="Total Admins"
+            value={userStats.admins || 0}
+            icon={<AdminPanelSettings />}
+            trend="System administrators"
+            color="error"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatsCard
-            title="Active Teachers"
-            value={Math.floor((userStats.teachers || 0) * 0.85)}
+            title="Active Admins"
+            value={Math.floor((userStats.admins || 0) * 0.95)}
             icon={<CheckCircle />}
-            trend="85% active rate"
+            trend="95% active rate"
             trendUp={true}
             color="success"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatsCard
-            title="Projects Supervised"
-            value={userStats.totalProjects || 0}
-            icon={<School />}
-            trend="All active projects"
-            color="info"
+            title="Security Level"
+            value="High"
+            icon={<Security />}
+            trend="All admins verified"
+            color="warning"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatsCard
-            title="Departments"
-            value={Math.ceil((userStats.teachers || 1) / 5)}
-            icon={<AdminPanelSettings />}
-            trend="Active departments"
-            color="warning"
+            title="Last Login"
+            value="Today"
+            icon={<CheckCircle />}
+            trend="Recent activity"
+            trendUp={true}
+            color="info"
           />
         </Grid>
       </Grid>
@@ -259,7 +260,7 @@ const TeachersManagement = () => {
               <TextField
                 fullWidth
                 size="small"
-                placeholder="Search teachers..."
+                placeholder="Search administrators..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
                 InputProps={{
@@ -288,7 +289,7 @@ const TeachersManagement = () => {
                 variant="outlined"
                 startIcon={<FilterList />}
                 onClick={() => {
-                  setFilters({ role: 'teacher', status: '', search: '' });
+                  setFilters({ role: 'admin', status: '', search: '' });
                   setPage(1);
                 }}
               >
@@ -299,22 +300,23 @@ const TeachersManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Teachers Table */}
+      {/* Admins Table */}
       <Card>
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">
-              Teachers ({users.pagination?.total || 0})
+              Administrators ({users.pagination?.total || 0})
             </Typography>
             <Button
               variant="contained"
               startIcon={<PersonAdd />}
+              color="error"
               onClick={() => {
-                // Navigate to add teacher page or open dialog
-                console.log('Add teacher clicked');
+                // Navigate to add admin page or open dialog
+                console.log('Add admin clicked');
               }}
             >
-              Add Teacher
+              Add Admin
             </Button>
           </Box>
 
@@ -322,7 +324,7 @@ const TeachersManagement = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Teacher</TableCell>
+                  <TableCell>Administrator</TableCell>
                   <TableCell>Email</TableCell>
                   <TableCell>Role</TableCell>
                   <TableCell>Status</TableCell>
@@ -334,7 +336,7 @@ const TeachersManagement = () => {
                 {users.loading ? (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
-                      <Typography>Loading teachers...</Typography>
+                      <Typography>Loading administrators...</Typography>
                     </TableCell>
                   </TableRow>
                 ) : users.data?.length > 0 ? (
@@ -345,7 +347,7 @@ const TeachersManagement = () => {
                           <Avatar
                             src={user.profilePicture}
                             alt={user.firstName}
-                            sx={{ width: 40, height: 40 }}
+                            sx={{ width: 40, height: 40, bgcolor: 'error.main' }}
                           >
                             {user.firstName?.[0]?.toUpperCase()}
                           </Avatar>
@@ -403,7 +405,7 @@ const TeachersManagement = () => {
                               <Edit fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title="Delete Teacher">
+                          <Tooltip title="Delete Admin">
                             <IconButton
                               size="small"
                               onClick={() => setDeleteDialog({ open: true, user })}
@@ -419,7 +421,7 @@ const TeachersManagement = () => {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
-                      <Typography color="text.secondary">No teachers found</Typography>
+                      <Typography color="text.secondary">No administrators found</Typography>
                     </TableCell>
                   </TableRow>
                 )}
@@ -444,7 +446,7 @@ const TeachersManagement = () => {
       {/* Edit Dialog */}
       <Dialog open={editDialog.open} onClose={() => setEditDialog({ open: false, user: null, type: '' })}>
         <DialogTitle>
-          Edit Teacher {editDialog.type === 'role' ? 'Role' : 'Status'}
+          Edit Administrator {editDialog.type === 'role' ? 'Role' : 'Status'}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ minWidth: 300, pt: 1 }}>
@@ -491,7 +493,7 @@ const TeachersManagement = () => {
           <Button onClick={() => setEditDialog({ open: false, user: null, type: '' })}>
             Cancel
           </Button>
-          <Button onClick={handleSaveEdit} variant="contained">
+          <Button onClick={handleSaveEdit} variant="contained" color="error">
             Save Changes
           </Button>
         </DialogActions>
@@ -502,8 +504,8 @@ const TeachersManagement = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete teacher "{deleteDialog.user?.firstName} {deleteDialog.user?.lastName}"?
-            This action cannot be undone.
+            Are you sure you want to delete administrator "{deleteDialog.user?.firstName} {deleteDialog.user?.lastName}"?
+            This action cannot be undone and may affect system operations.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -511,7 +513,7 @@ const TeachersManagement = () => {
             Cancel
           </Button>
           <Button onClick={handleDeleteUser} variant="contained" color="error">
-            Delete Teacher
+            Delete Admin
           </Button>
         </DialogActions>
       </Dialog>
@@ -534,4 +536,4 @@ const TeachersManagement = () => {
   );
 };
 
-export default TeachersManagement;
+export default AdminsManagement;

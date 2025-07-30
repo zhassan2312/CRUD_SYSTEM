@@ -22,6 +22,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import Teachers from './pages/admin/Teachers';
 import ProjectReview from './pages/admin/ProjectReview';
 import Users from './pages/admin/Users';
+import Admins from './pages/admin/Admins';
 import BulkProjectManagement from './pages/admin/BulkProjectManagement';
 
 // Components
@@ -121,6 +122,14 @@ function App() {
         <ProtectedRoute requiredRole="admin">
           <Sidebar darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
             <Users />
+          </Sidebar>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/admin/admins" element={
+        <ProtectedRoute requiredRole="admin">
+          <Sidebar darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
+            <Admins />
           </Sidebar>
         </ProtectedRoute>
       } />
