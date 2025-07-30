@@ -8,11 +8,13 @@ import {
   Menu,
   MenuItem,
   Container,
-  IconButton
+  IconButton,
+  Badge
 } from '@mui/material';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
@@ -21,12 +23,23 @@ import SchoolIcon from '@mui/icons-material/School';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import NotificationCenter from './notifications/NotificationCenter';
 
 const Layout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
+  const { unreadCount, getNotifications } = useNotificationStore();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+
+  useEffect(() => {
+    // Load initial notification count
+    if (user) {
+      getNotifications();
+    }
+  }, [user, getNotifications]);
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -121,6 +134,17 @@ const Layout = ({ children }) => {
 
           {/* User Menu */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* Notification Bell */}
+            <IconButton
+              color="inherit"
+              onClick={() => setNotificationOpen(true)}
+              sx={{ mr: 1 }}
+            >
+              <Badge badgeContent={unreadCount} color="error" max={99}>
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
+            
             <Typography variant="body2">
               {user?.fullName}
             </Typography>
@@ -165,6 +189,12 @@ const Layout = ({ children }) => {
       <Container maxWidth="xl" sx={{ mt: 3, mb: 3 }}>
         {children}
       </Container>
+
+      {/* Notification Center */}
+      <NotificationCenter 
+        open={notificationOpen} 
+        onClose={() => setNotificationOpen(false)} 
+      />
     </Box>
   );
 };

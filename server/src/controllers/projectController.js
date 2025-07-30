@@ -18,6 +18,7 @@ import {
   getDownloadURL, 
   deleteObject 
 } from 'firebase/storage';
+import { createNotification, sendEmailNotification } from './notificationController.js';
 
 // Initialize Firebase Storage
 const firebaseStorage = getStorage();
@@ -144,6 +145,50 @@ export const createProject = async (req, res) => {
 
     // Add project to Firestore
     const docRef = await addDoc(collection(db, 'projects'), projectData);
+
+    // Create notification for supervisor about new project assignment
+    if (supervisorId) {
+      try {
+        const teamMembersText = students?.map(s => s.name).join(', ') || 'No team members';
+        
+        await createNotification(supervisorId, {
+          title: 'New Project Assignment',
+          message: `You have been assigned as supervisor for the project "${title}" by ${teamMembersText}`,
+          type: 'info',
+          category: 'project',
+          data: {
+            projectId: docRef.id,
+            projectTitle: title,
+            teamMembers: teamMembersText,
+            submissionDate: new Date().toISOString()
+          }
+        });
+      } catch (notificationError) {
+        console.error("Error creating supervisor notification:", notificationError);
+      }
+    }
+
+    // Create notification for co-supervisor if assigned
+    if (coSupervisorId && coSupervisorId !== supervisorId) {
+      try {
+        const teamMembersText = students?.map(s => s.name).join(', ') || 'No team members';
+        
+        await createNotification(coSupervisorId, {
+          title: 'New Co-Supervisor Assignment',
+          message: `You have been assigned as co-supervisor for the project "${title}" by ${teamMembersText}`,
+          type: 'info',
+          category: 'project',
+          data: {
+            projectId: docRef.id,
+            projectTitle: title,
+            teamMembers: teamMembersText,
+            submissionDate: new Date().toISOString()
+          }
+        });
+      } catch (notificationError) {
+        console.error("Error creating co-supervisor notification:", notificationError);
+      }
+    }
 
     // Handle image upload if provided
     if (req.file) {
@@ -350,6 +395,26 @@ export const updateProjectStatus = async (req, res) => {
     };
 
     await updateDoc(projectRef, updateData);
+
+    // Create in-app notification for project owner
+    try {
+      await createNotification(projectData.createdBy, {
+        title: 'Project Status Updated',
+        message: `Your project "${projectData.title}" status has been changed to ${status.replace('-', ' ').toUpperCase()}${reviewComment ? ` with comment: "${reviewComment}"` : ''}`,
+        type: status === 'approved' ? 'success' : status === 'rejected' ? 'error' : 'info',
+        category: 'project',
+        data: {
+          projectId,
+          projectTitle: projectData.title,
+          oldStatus: projectData.status,
+          newStatus: status,
+          reviewComment,
+          reviewerName
+        }
+      });
+    } catch (notificationError) {
+      console.error("Error creating notification:", notificationError);
+    }
 
     // Send email notification if requested
     if (sendEmail && projectData.createdBy) {

@@ -39,6 +39,7 @@ import * as yup from 'yup';
 import { useState, useEffect } from 'react';
 import { useUserStore } from '../../store/useUserStore';
 import { useAuthStore } from '../../store/authStore';
+import NotificationPreferences from '../../components/notifications/NotificationPreferences';
 
 // Validation schemas
 const profileSchema = yup.object({
@@ -484,6 +485,17 @@ const UserProfile = () => {
     </Card>
   );
 
+  const renderNotificationsTab = () => (
+    <Card>
+      <CardContent>
+        <Typography variant="h6" sx={{ mb: 3 }}>
+          Notification Preferences
+        </Typography>
+        <NotificationPreferences />
+      </CardContent>
+    </Card>
+  );
+
   const renderDangerZone = () => (
     <Card sx={{ border: '1px solid', borderColor: 'error.main' }}>
       <CardContent>
@@ -538,6 +550,13 @@ const UserProfile = () => {
           Security
         </Button>
         <Button
+          variant={activeTab === 'notifications' ? 'contained' : 'outlined'}
+          onClick={() => setActiveTab('notifications')}
+          sx={{ mr: 1 }}
+        >
+          Notifications
+        </Button>
+        <Button
           variant={activeTab === 'stats' ? 'contained' : 'outlined'}
           onClick={() => setActiveTab('stats')}
         >
@@ -548,6 +567,7 @@ const UserProfile = () => {
       {/* Tab Content */}
       {activeTab === 'profile' && renderProfileTab()}
       {activeTab === 'security' && renderSecurityTab()}
+      {activeTab === 'notifications' && renderNotificationsTab()}
       {activeTab === 'stats' && renderStatsTab()}
 
       {/* Danger Zone - Always visible at bottom */}
