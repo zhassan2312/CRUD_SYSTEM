@@ -14,7 +14,7 @@ const useProjectStore = create((set, get) => ({
   fetchProjects: async () => {
     set({ loading: true, error: null });
     try {
-      const response = await api.get('/projects');
+      const response = await api.get('/projects/all');
       set({ projects: response.data, loading: false });
     } catch (error) {
       set({ error: error.response?.data?.message || error.message, loading: false });
@@ -146,6 +146,52 @@ const useProjectStore = create((set, get) => ({
       const response = await api.get(`/projects/${projectId}`);
       set({ loading: false });
       return { success: true, project: response.data };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      set({ error: errorMessage, loading: false });
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  // Get projects for review (admin/teacher only)
+  fetchProjectsForReview: async (status = 'all') => {
+    set({ loading: true, error: null });
+    try {
+      const response = await api.get(`/projects/review/list?status=${status}`);
+      set({ projects: response.data.projects, loading: false });
+      return { success: true, data: response.data };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      set({ error: errorMessage, loading: false });
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  // Update project status (admin/teacher only)
+  updateProjectStatus: async (projectId, status, feedback = '') => {
+    set({ loading: true, error: null });
+    try {
+      await api.put(`/projects/${projectId}/status`, { status, feedback });
+      
+      // Refresh projects list
+      await get().fetchProjectsForReview();
+      
+      set({ loading: false });
+      return { success: true, message: 'Project status updated successfully!' };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      set({ error: errorMessage, loading: false });
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  // Get project status history
+  getProjectStatusHistory: async (projectId) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await api.get(`/projects/${projectId}/status-history`);
+      set({ loading: false });
+      return { success: true, history: response.data };
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message;
       set({ error: errorMessage, loading: false });

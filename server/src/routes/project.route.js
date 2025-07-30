@@ -20,6 +20,13 @@ router.post('/', authenticateToken, createProject);
 // Get user's own projects
 router.get('/user', authenticateToken, getUserProjects);
 
+// Admin/Teacher only routes
+// Get all projects (admin/teacher only)
+router.get('/all', authenticateToken, requireTeacherOrAdmin, getAllProjects);
+
+// Get projects for review (admin/teacher only)
+router.get('/review/list', authenticateToken, requireTeacherOrAdmin, getProjectsForReview);
+
 // Get project by ID (project owner or admin/teacher)
 router.get('/:id', authenticateToken, getProjectById);
 
@@ -28,13 +35,6 @@ router.put('/:id', authenticateToken, updateProject);
 
 // Delete project (project owner only)
 router.delete('/:id', authenticateToken, deleteProject);
-
-// Admin/Teacher only routes
-// Get all projects (admin/teacher only)
-router.get('/', authenticateToken, requireTeacherOrAdmin, getAllProjects);
-
-// Get projects for review (admin/teacher only)
-router.get('/review/list', authenticateToken, requireTeacherOrAdmin, getProjectsForReview);
 
 // Update project status (admin/teacher only)
 router.put('/:id/status', authenticateToken, requireTeacherOrAdmin, updateProjectStatus);

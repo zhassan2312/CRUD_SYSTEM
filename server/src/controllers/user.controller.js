@@ -147,11 +147,39 @@ const loginUser = async(req, res) => {
             return res.status(401).json("Invalid email or password");
         }
 
+        console.log('Login attempt for user:', userDoc.data().email, 'Role:', userDoc.data().role);
+
         // Verify password using bcrypt
-        const isPasswordValid = await bcrypt.compare(password, userDoc.data().password);
+        let isPasswordValid = false;
+        const storedPassword = userDoc.data().password;
+        
+        try {
+            // First try bcrypt comparison (for new hashed passwords)
+            isPasswordValid = await bcrypt.compare(password, storedPassword);
+        } catch (bcryptError) {
+            // If bcrypt fails, it might be a plain text password (legacy)
+            console.log('Bcrypt comparison failed, trying plain text comparison for backward compatibility');
+            isPasswordValid = (password === storedPassword);
+            
+            // If plain text password matches, hash it and update the database
+            if (isPasswordValid) {
+                console.log('Plain text password matched, updating to hashed password for user:', email);
+                const saltRounds = 12;
+                const hashedPassword = await bcrypt.hash(password, saltRounds);
+                await updateDoc(doc(users, userDoc.id), { 
+                    password: hashedPassword,
+                    updatedAt: new Date() 
+                });
+                console.log('Password migrated to hashed version for user:', email);
+            }
+        }
+        
         if (!isPasswordValid) {
+            console.log('Password validation failed for user:', email);
             return res.status(401).json("Invalid email or password");
         }
+
+        console.log('Password validated successfully for user:', email);
 
         // Check email verification status from Firebase Auth
         try {
@@ -551,15 +579,15 @@ const updateUserRole = async (req, res) => {
         const { role } = req.body;
 
         // Validate role
-        if (!role || !['admin', 'user'].includes(role)) {
-            return res.status(400).json("Invalid role. Must be 'admin' or 'user'");
+        if (!role || !['admin', 'teacher', 'user'].includes(role)) {
+            return res.status(400).json({ message: "Invalid role. Must be 'admin', 'teacher', or 'user'" });
         }
 
         const userDocRef = doc(users, userId);
         const userDoc = await getDoc(userDocRef);
         
         if (!userDoc.exists()) {
-            return res.status(404).json("User not found");
+            return res.status(404).json({ message: "User not found" });
         }
 
         // Update user role in Firestore
@@ -568,10 +596,17 @@ const updateUserRole = async (req, res) => {
             updatedAt: new Date()
         });
 
-        res.status(200).json("User role updated successfully");
+        res.status(200).json({ 
+            message: "User role updated successfully",
+            user: {
+                id: userDoc.id,
+                ...userDoc.data(),
+                role: role
+            }
+        });
     } catch (error) {
         console.error("Error updating user role:", error);
-        res.status(500).json("Error updating user role");
+        res.status(500).json({ message: "Error updating user role" });
     }
 };
 

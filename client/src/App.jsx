@@ -11,6 +11,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import RoleBasedRoute from './components/RoleBasedRoute';
 import RoleBasedRedirect from './components/RoleBasedRedirect';
 import LoadingScreen from './components/LoadingScreen';
+import UserDebugInfo from './components/UserDebugInfo';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -50,6 +51,7 @@ const App = () => {
       <Router>
         {user ? (
           <Layout>
+            <UserDebugInfo />
             <Routes>
               {/* Home Route - Redirect based on role */}
               <Route 

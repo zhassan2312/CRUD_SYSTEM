@@ -104,6 +104,20 @@ const useTeacherStore = create((set, get) => ({
       return { success: false, error: errorMessage };
     }
   },
+
+  // Get teacher by ID
+  getTeacher: async (teacherId) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await api.get(`/teachers/${teacherId}`);
+      set({ loading: false });
+      return { success: true, teacher: response.data };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      set({ error: errorMessage, loading: false });
+      return { success: false, error: errorMessage };
+    }
+  },
 }));
 
 export default useTeacherStore;
