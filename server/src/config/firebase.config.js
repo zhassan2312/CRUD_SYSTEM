@@ -27,11 +27,12 @@ if (!admin.apps.length) {
   });
 }
 
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
-const bucket = admin.storage().bucket();
+
+// Initialize bucket with explicit bucket name
+const bucket = admin.storage().bucket(env.FIREBASE_STORAGE_BUCKET);
 const users = collection(db, 'users');
 const mail = collection(db, 'mail');
 const projects = collection(db, 'projects');

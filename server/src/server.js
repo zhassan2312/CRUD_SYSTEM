@@ -10,6 +10,9 @@ import teacherRoutes from './routes/teacherRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 
+// Import utilities
+import { globalErrorHandler } from './utils/responseHelpers.js';
+
 // Initialize Firebase
 import './config/firebase.config.js';
 
@@ -42,22 +45,20 @@ app.get('/api/health', (req, res) => {
 });
 
 // Global error handler
+app.use(globalErrorHandler);
+
+// Handle multer-specific errors in the global handler
 app.use((error, req, res, next) => {
-  console.error('Global error:', error);
-  
-  // Handle multer errors
   if (error.code === 'LIMIT_FILE_SIZE') {
-    return res.status(400).json({ message: 'File too large' });
+    error.message = 'File too large';
+    error.statusCode = 400;
   }
   
   if (error.message === 'Only image files are allowed!') {
-    return res.status(400).json({ message: 'Only image files are allowed' });
+    error.statusCode = 400;
   }
   
-  res.status(500).json({ 
-    message: 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { error: error.message })
-  });
+  globalErrorHandler(error, req, res, next);
 });
 
 app.listen(PORT, () => {

@@ -29,6 +29,7 @@ export const authMiddleware = async (req, res, next) => {
     // Attach user info to request
     req.user = {
       id: decoded.id,
+      uid: decoded.id, // Add uid for Firebase compatibility
       email: userData.email,
       role: userData.role,
       fullName: userData.fullName
