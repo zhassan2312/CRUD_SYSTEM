@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -31,14 +31,16 @@ import {
   Close
 } from '@mui/icons-material';
 import { useDropzone } from 'react-dropzone';
-import api from '../../lib/api';
+import useFileStore from '../../store/fileStore';
 
 const FileUploadManager = ({ projectId, onUploadComplete, open, onClose }) => {
   const [files, setFiles] = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState('');
+  
+  const { uploadProjectFiles, getUploadProgress, cleanupUploads } = useFileStore();
+  const [currentUploadId, setCurrentUploadId] = useState(null);
+  const uploadProgress = currentUploadId ? getUploadProgress(currentUploadId) : null;
 
   const getFileIcon = (mimeType) => {
     if (mimeType.startsWith('image/')) return <Image color="primary" />;
@@ -103,30 +105,19 @@ const FileUploadManager = ({ projectId, onUploadComplete, open, onClose }) => {
   const handleUpload = async () => {
     if (files.length === 0) return;
 
-    setUploading(true);
-    setUploadProgress(0);
     setUploadError('');
     setUploadSuccess('');
 
     try {
-      const formData = new FormData();
-      files.forEach(({ file }) => {
-        formData.append('files', file);
-      });
+      const fileObjects = files.map(({ file }) => file);
+      const uploadId = `${projectId}_${Date.now()}`;
+      setCurrentUploadId(uploadId);
 
-      const response = await api.post(
-        `/projects/${projectId}/files`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          onUploadProgress: (progressEvent) => {
-            const progress = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
-            setUploadProgress(progress);
-          },
+      const response = await uploadProjectFiles(
+        projectId, 
+        fileObjects,
+        (progress) => {
+          // Progress is already handled by the store
         }
       );
 
@@ -134,12 +125,13 @@ const FileUploadManager = ({ projectId, onUploadComplete, open, onClose }) => {
       setFiles([]);
       
       if (onUploadComplete) {
-        onUploadComplete(response.data.files);
+        onUploadComplete(response.files);
       }
 
       // Auto close after success
       setTimeout(() => {
         onClose();
+        setCurrentUploadId(null);
       }, 2000);
 
     } catch (error) {
@@ -147,20 +139,31 @@ const FileUploadManager = ({ projectId, onUploadComplete, open, onClose }) => {
       setUploadError(
         error.response?.data?.message || 'Failed to upload files'
       );
-    } finally {
-      setUploading(false);
-      setUploadProgress(0);
+      setCurrentUploadId(null);
     }
   };
 
   const handleClose = () => {
-    if (!uploading) {
+    const isUploading = uploadProgress?.status === 'uploading';
+    
+    if (!isUploading) {
       setFiles([]);
       setUploadError('');
       setUploadSuccess('');
+      setCurrentUploadId(null);
+      cleanupUploads(); // Clean up completed uploads
       onClose();
     }
   };
+
+  // Clean up upload progress when component unmounts
+  useEffect(() => {
+    return () => {
+      if (currentUploadId) {
+        cleanupUploads();
+      }
+    };
+  }, [currentUploadId, cleanupUploads]);
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
@@ -199,13 +202,13 @@ const FileUploadManager = ({ projectId, onUploadComplete, open, onClose }) => {
             border: '2px dashed',
             borderColor: isDragActive ? 'primary.main' : 'grey.300',
             backgroundColor: isDragActive ? 'action.hover' : 'background.paper',
-            cursor: uploading ? 'not-allowed' : 'pointer',
+            cursor: uploadProgress?.status === 'uploading' ? 'not-allowed' : 'pointer',
             mb: 2,
-            opacity: uploading ? 0.5 : 1
+            opacity: uploadProgress?.status === 'uploading' ? 0.5 : 1
           }}
         >
           <CardContent sx={{ textAlign: 'center', py: 4 }}>
-            <input {...getInputProps()} disabled={uploading} />
+            <input {...getInputProps()} disabled={uploadProgress?.status === 'uploading'} />
             <CloudUpload sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" gutterBottom>
               {isDragActive
@@ -254,7 +257,7 @@ const FileUploadManager = ({ projectId, onUploadComplete, open, onClose }) => {
                     <IconButton
                       edge="end"
                       onClick={() => removeFile(id)}
-                      disabled={uploading}
+                      disabled={uploadProgress?.status === 'uploading'}
                       size="small"
                     >
                       <Delete />
@@ -266,27 +269,33 @@ const FileUploadManager = ({ projectId, onUploadComplete, open, onClose }) => {
           </Box>
         )}
 
-        {uploading && (
+        {uploadProgress?.status === 'uploading' && (
           <Box sx={{ mt: 2 }}>
             <Typography variant="body2" gutterBottom>
-              Uploading... {uploadProgress}%
+              Uploading... {uploadProgress.progress}%
             </Typography>
-            <LinearProgress variant="determinate" value={uploadProgress} />
+            <LinearProgress variant="determinate" value={uploadProgress.progress} />
           </Box>
+        )}
+
+        {uploadProgress?.status === 'error' && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {uploadProgress.error}
+          </Alert>
         )}
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleClose} disabled={uploading}>
+        <Button onClick={handleClose} disabled={uploadProgress?.status === 'uploading'}>
           Cancel
         </Button>
         <Button
           onClick={handleUpload}
           variant="contained"
-          disabled={files.length === 0 || uploading}
+          disabled={files.length === 0 || uploadProgress?.status === 'uploading'}
           startIcon={<CloudUpload />}
         >
-          {uploading ? 'Uploading...' : `Upload ${files.length} File(s)`}
+          {uploadProgress?.status === 'uploading' ? 'Uploading...' : `Upload ${files.length} File(s)`}
         </Button>
       </DialogActions>
     </Dialog>

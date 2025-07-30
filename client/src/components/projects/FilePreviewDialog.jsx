@@ -21,13 +21,19 @@ import {
   ZoomOut
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import api from '../../lib/api';
+import useFileStore from '../../store/fileStore';
 
 const FilePreviewDialog = ({ open, onClose, file, projectId }) => {
-  const [previewData, setPreviewData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [imageZoom, setImageZoom] = useState(100);
+
+  const { 
+    previewFile: previewData, 
+    previewLoading: loading, 
+    previewError: error, 
+    previewFile: previewFileAction, 
+    downloadFile, 
+    closePreview 
+  } = useFileStore();
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -41,16 +47,9 @@ const FilePreviewDialog = ({ open, onClose, file, projectId }) => {
     if (!file || !projectId) return;
 
     try {
-      setLoading(true);
-      setError('');
-      
-      const response = await api.get(`/projects/${projectId}/files/${file.id}/preview`);
-      setPreviewData(response.data);
+      await previewFileAction(projectId, file.id);
     } catch (error) {
       console.error('Error fetching preview:', error);
-      setError(error.response?.data?.message || 'Failed to load preview');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -58,23 +57,16 @@ const FilePreviewDialog = ({ open, onClose, file, projectId }) => {
     if (open && file) {
       fetchPreview();
       setImageZoom(100); // Reset zoom when opening new file
+    } else if (!open) {
+      closePreview(); // Clear preview data when dialog closes
     }
   }, [open, file, projectId]);
 
   const handleDownload = async () => {
     try {
-      const response = await api.get(`/projects/${projectId}/files/${file.id}/download`);
-      
-      const link = document.createElement('a');
-      link.href = response.data.downloadUrl;
-      link.download = response.data.fileName;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      await downloadFile(projectId, file.id);
     } catch (error) {
       console.error('Error downloading file:', error);
-      setError(error.response?.data?.message || 'Failed to download file');
     }
   };
 

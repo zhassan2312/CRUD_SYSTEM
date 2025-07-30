@@ -35,19 +35,30 @@ import {
   MoreVert,
   CloudUpload,
   Visibility,
-  GetApp
+  GetApp,
+  Refresh
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import api from '../../lib/api';
+import useFileStore from '../../store/fileStore';
 import FilePreviewDialog from './FilePreviewDialog';
 
 const ProjectFileList = ({ projectId, refreshTrigger }) => {
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [deleteDialog, setDeleteDialog] = useState({ open: false, file: null });
   const [previewDialog, setPreviewDialog] = useState({ open: false, file: null });
   const [actionMenu, setActionMenu] = useState({ anchor: null, file: null });
+
+  const { 
+    projectFiles, 
+    getProjectFiles, 
+    refreshProjectFiles, 
+    deleteProjectFile, 
+    downloadFile 
+  } = useFileStore();
+
+  const projectFileData = projectFiles[projectId];
+  const files = projectFileData?.data || [];
+  const loading = projectFileData?.loading || false;
+  const error = projectFileData?.error || null;
 
   const getFileIcon = (mimeType) => {
     if (mimeType.startsWith('image/')) return <Image color="primary" />;
@@ -67,16 +78,17 @@ const ProjectFileList = ({ projectId, refreshTrigger }) => {
 
   const fetchFiles = async () => {
     try {
-      setLoading(true);
-      setError('');
-      
-      const response = await api.get(`/projects/${projectId}/files`);
-      setFiles(response.data.files);
+      await getProjectFiles(projectId);
     } catch (error) {
       console.error('Error fetching files:', error);
-      setError(error.response?.data?.message || 'Failed to load files');
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    try {
+      await refreshProjectFiles(projectId);
+    } catch (error) {
+      console.error('Error refreshing files:', error);
     }
   };
 
@@ -96,21 +108,10 @@ const ProjectFileList = ({ projectId, refreshTrigger }) => {
 
   const handleDownload = async (file) => {
     try {
-      const response = await api.get(`/projects/${projectId}/files/${file.id}/download`);
-      
-      // Create a temporary link element and trigger download
-      const link = document.createElement('a');
-      link.href = response.data.downloadUrl;
-      link.download = response.data.fileName;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
+      await downloadFile(projectId, file.id);
       handleMenuClose();
     } catch (error) {
       console.error('Error downloading file:', error);
-      setError(error.response?.data?.message || 'Failed to download file');
     }
   };
 
@@ -129,12 +130,10 @@ const ProjectFileList = ({ projectId, refreshTrigger }) => {
     if (!file) return;
 
     try {
-      await api.delete(`/projects/${projectId}/files/${file.id}`);
-      setFiles(prev => prev.filter(f => f.id !== file.id));
+      await deleteProjectFile(projectId, file.id);
       setDeleteDialog({ open: false, file: null });
     } catch (error) {
       console.error('Error deleting file:', error);
-      setError(error.response?.data?.message || 'Failed to delete file');
     }
   };
 
@@ -174,6 +173,11 @@ const ProjectFileList = ({ projectId, refreshTrigger }) => {
             <Typography variant="h6">
               Project Files {files.length > 0 && `(${files.length})`}
             </Typography>
+            <Tooltip title="Refresh files">
+              <IconButton onClick={handleRefresh} size="small">
+                <Refresh />
+              </IconButton>
+            </Tooltip>
           </Box>
 
           {error && (

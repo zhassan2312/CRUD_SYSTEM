@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -12,7 +12,9 @@ import {
   CircularProgress,
   Alert,
   Grid,
-  Divider
+  Divider,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import {
   Storage,
@@ -23,15 +25,20 @@ import {
   Description,
   Image,
   PictureAsPdf,
-  Archive
+  Archive,
+  Refresh
 } from '@mui/icons-material';
-import { format } from 'date-fns';
-import api from '../../lib/api';
+import useAdminStore from '../../store/adminStore';
 
 const FileStatistics = () => {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // Use centralized admin store
+  const { 
+    fileStats, 
+    fetchFileStatistics, 
+    refreshFileStatistics 
+  } = useAdminStore();
+  
+  const { data: stats, loading, error } = fileStats;
 
   const getFileIcon = (mimeType) => {
     if (mimeType.startsWith('image/')) return <Image color="primary" />;
@@ -71,23 +78,16 @@ const FileStatistics = () => {
   };
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-        setError('');
-        
-        const response = await api.get('/projects/admin/file-statistics');
-        setStats(response.data.statistics); // Access the nested statistics object
-      } catch (error) {
-        console.error('Error fetching file statistics:', error);
-        setError(error.response?.data?.message || 'Failed to load file statistics');
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchFileStatistics();
+  }, [fetchFileStatistics]);
 
-    fetchStats();
-  }, []);
+  const handleRefresh = async () => {
+    try {
+      await refreshFileStatistics();
+    } catch (error) {
+      console.error('Error refreshing file statistics:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -126,7 +126,24 @@ const FileStatistics = () => {
   }
 
   return (
-    <Grid container spacing={3}>
+    <>
+      {/* Header with refresh button */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h5" component="h1">
+          File Statistics
+        </Typography>
+        <Tooltip title="Refresh Statistics">
+          <IconButton 
+            onClick={handleRefresh} 
+            disabled={loading}
+            color="primary"
+          >
+            <Refresh />
+          </IconButton>
+        </Tooltip>
+      </Box>
+
+      <Grid container spacing={3}>
       {/* Overview Cards */}
       <Grid xs={12} md={4}>
         <Card>
@@ -252,6 +269,7 @@ const FileStatistics = () => {
         </Card>
       </Grid>
     </Grid>
+    </>
   );
 };
 
