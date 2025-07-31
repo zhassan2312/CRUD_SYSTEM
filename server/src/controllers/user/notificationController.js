@@ -1,13 +1,13 @@
-import notificationService from '../services/notificationService.js';
-import emailService from '../services/emailService.js';
-import { EMAIL_TEMPLATE_TYPES } from '../constants/notifications.js';
+import notificationService from '../../services/notificationService.js';
+import emailService from '../../services/emailService.js';
+import { EMAIL_TEMPLATE_TYPES } from '../../constants/notifications.js';
 import { 
   sendSuccess, 
   sendError, 
   sendNotFound, 
   sendForbidden, 
   asyncHandler 
-} from '../utils/responseHelpers.js';
+} from '../../utils/responseHelpers.js';
 
 // Create notification
 export const createNotification = async (userId, notificationData) => {

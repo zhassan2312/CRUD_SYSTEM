@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import api from '../lib/api';
+import api from '../../lib/api';
 
 const useFileStore = create(
   devtools(
@@ -45,7 +45,7 @@ const useFileStore = create(
         }));
 
         try {
-          const response = await api.get(`/projects/${projectId}/files`);
+          const response = await api.get(`/user/projects/${projectId}/files`);
           
           set((state) => ({
             projectFiles: {
@@ -100,7 +100,7 @@ const useFileStore = create(
             formData.append('files', file);
           });
 
-          const response = await api.post(`/projects/${projectId}/files`, formData, {
+          const response = await api.post(`/user/projects/${projectId}/files`, formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
             },
@@ -169,7 +169,7 @@ const useFileStore = create(
       // Delete a file
       deleteProjectFile: async (projectId, fileId) => {
         try {
-          await api.delete(`/projects/${projectId}/files/${fileId}`);
+          await api.delete(`/user/projects/${projectId}/files/${fileId}`);
           
           // Remove file from the local state
           set((state) => ({
@@ -193,7 +193,7 @@ const useFileStore = create(
       // Download a file
       downloadFile: async (projectId, fileId) => {
         try {
-          const response = await api.get(`/projects/${projectId}/files/${fileId}/download`);
+          const response = await api.get(`/user/projects/${projectId}/files/${fileId}/download`);
           
           // Create download link
           const link = document.createElement('a');
@@ -218,7 +218,7 @@ const useFileStore = create(
         });
 
         try {
-          const response = await api.get(`/projects/${projectId}/files/${fileId}/preview`);
+          const response = await api.get(`/user/projects/${projectId}/files/${fileId}/preview`);
           
           set({
             previewFile: response.data,

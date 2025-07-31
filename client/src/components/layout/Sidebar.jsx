@@ -47,8 +47,8 @@ import {
   LightMode,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
-import { useNotificationStore } from '../../store/notificationStore';
+import { useAuthStore } from '../../store/user';
+import { useUserNotificationStore } from '../../store/user';
 import NotificationCenter from '../notifications/NotificationCenter';
 
 const DRAWER_WIDTH = 280;
@@ -61,7 +61,7 @@ const ModernSidebar = ({ children, darkMode, toggleDarkMode }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   
   const { user, logout } = useAuthStore();
-  const { unreadCount, getNotifications, checkForNewNotifications } = useNotificationStore();
+  const { unreadCount, getNotifications, checkForNewNotifications } = useUserNotificationStore();
   
   const [drawerOpen, setDrawerOpen] = useState(!isMobile);
   const [collapsed, setCollapsed] = useState(false);

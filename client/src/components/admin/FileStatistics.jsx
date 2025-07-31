@@ -28,7 +28,7 @@ import {
   Archive,
   Refresh
 } from '@mui/icons-material';
-import useAdminStore from '../../store/adminStore';
+import { useDashboardStore } from '../../store/admin';
 
 const FileStatistics = () => {
   // Use centralized admin store
@@ -36,7 +36,7 @@ const FileStatistics = () => {
     fileStats, 
     fetchFileStatistics, 
     refreshFileStatistics 
-  } = useAdminStore();
+  } = useDashboardStore();
   
   const { data: stats, loading, error } = fileStats;
 

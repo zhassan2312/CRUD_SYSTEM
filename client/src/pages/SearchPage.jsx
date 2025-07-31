@@ -14,8 +14,8 @@ import {
 } from '@mui/icons-material';
 import AdvancedSearch from '../components/search/AdvancedSearch';
 import SearchResults from '../components/search/SearchResults';
-import { useSearchStore } from '../store/searchStore';
-import { useAuthStore } from '../store/authStore';
+import { useSearchStore } from '../store/user';
+import { useAuthStore } from '../store/user';
 
 const SearchPage = () => {
   const [hasSearched, setHasSearched] = useState(false);

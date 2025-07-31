@@ -1,8 +1,8 @@
 import { create } from 'zustand';
-import api from '../lib/api';
+import api from '../../lib/api';
 import { toast } from 'react-toastify';
 
-export const useUserStore = create((set, get) => ({
+const useUserStore = create((set, get) => ({
   userProfile: null,
   userStats: null,
   userPreferences: null,
@@ -13,7 +13,7 @@ export const useUserStore = create((set, get) => ({
   getUserProfile: async () => {
     try {
       set({ isLoading: true, error: null });
-      const response = await api.get('/users/profile');
+      const response = await api.get('/user/profile/profile');
       
       set({ 
         userProfile: response.data.user,
@@ -52,7 +52,7 @@ export const useUserStore = create((set, get) => ({
         headers['Content-Type'] = 'multipart/form-data';
       }
       
-      const response = await api.put('/users/profile', requestData, { headers });
+      const response = await api.put('/user/profile/profile', requestData, { headers });
       
       set({ 
         userProfile: response.data.user,
@@ -77,7 +77,7 @@ export const useUserStore = create((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      await api.put('/users/change-password', passwordData);
+      await api.put('/user/profile/change-password', passwordData);
       
       set({ isLoading: false });
       toast.success('Password changed successfully!');
@@ -98,7 +98,7 @@ export const useUserStore = create((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      const response = await api.put('/users/preferences', preferences);
+      const response = await api.put('/user/profile/preferences', preferences);
       
       set({ 
         userPreferences: response.data.preferences,
@@ -123,7 +123,7 @@ export const useUserStore = create((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      await api.delete('/users/delete-account', { data: deleteData });
+      await api.delete('/user/profile/delete-account', { data: deleteData });
       
       set({ 
         userProfile: null,
@@ -150,7 +150,7 @@ export const useUserStore = create((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      const response = await api.get('/users/stats');
+      const response = await api.get('/user/profile/stats');
       
       set({ 
         userStats: response.data.stats,
@@ -180,3 +180,5 @@ export const useUserStore = create((set, get) => ({
     error: null
   })
 }));
+
+export default useUserStore;

@@ -22,7 +22,7 @@ import {
   Save as SaveIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material';
-import { useNotificationStore } from '../../store/notificationStore';
+import { useUserNotificationStore } from '../../store/user';
 
 const NotificationPreferences = () => {
   const [localPreferences, setLocalPreferences] = useState({
@@ -50,7 +50,7 @@ const NotificationPreferences = () => {
     isLoadingPreferences,
     getPreferences,
     updatePreferences
-  } = useNotificationStore();
+  } = useUserNotificationStore();
 
   useEffect(() => {
     getPreferences();

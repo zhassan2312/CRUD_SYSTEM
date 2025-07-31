@@ -17,7 +17,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
+import { useAuthStore } from '../../store/user';
 import { useState } from 'react';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 

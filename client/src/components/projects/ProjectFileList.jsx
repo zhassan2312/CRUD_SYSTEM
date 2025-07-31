@@ -39,7 +39,7 @@ import {
   Refresh
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import useFileStore from '../../store/fileStore';
+import { useFileStore } from '../../store/user';
 import FilePreviewDialog from './FilePreviewDialog';
 
 const ProjectFileList = ({ projectId, refreshTrigger }) => {

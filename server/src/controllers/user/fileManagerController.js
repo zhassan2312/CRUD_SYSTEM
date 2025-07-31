@@ -12,7 +12,7 @@ import {
   limit, 
   Timestamp 
 } from 'firebase/firestore';
-import { bucket, db } from '../config/firebase.config.js';
+import { bucket, db } from '../../config/firebase.config.js';
 
 /**
  * Upload multiple files for a project

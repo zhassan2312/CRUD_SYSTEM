@@ -29,10 +29,10 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import ModernPageContainer from '../../components/ui/ModernPageContainer';
-import useAdminStore from '../../store/adminStore';
+import { useDashboardStore } from '../../store/admin';
 
 const SystemLogs = () => {
-  const { systemLogs, fetchSystemLogs } = useAdminStore();
+  const { systemLogs, fetchSystemLogs } = useDashboardStore();
   const [logType, setLogType] = useState('all');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);

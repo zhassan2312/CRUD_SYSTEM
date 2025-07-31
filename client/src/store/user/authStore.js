@@ -1,8 +1,8 @@
 import { create } from 'zustand';
-import api from '../lib/api';
+import api from '../../lib/api';
 import { toast } from 'react-toastify';
 
-export const useAuthStore = create((set, get) => ({
+const useAuthStore = create((set, get) => ({
   user: null,
   isLoading: false,
   isAuthenticated: false,
@@ -52,7 +52,7 @@ export const useAuthStore = create((set, get) => ({
           }
         });
 
-        const response = await api.post('/auth/register', formData, {
+        const response = await api.post('/user/auth/register', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -65,7 +65,7 @@ export const useAuthStore = create((set, get) => ({
         return { success: true, verificationRequired: true };
       } else {
         // Use JSON for registration without profile picture
-        const response = await api.post('/auth/register', userData);
+        const response = await api.post('/user/auth/register', userData);
 
         // Don't auto-authenticate, user needs to verify email first
         set({ isLoading: false });
@@ -85,7 +85,7 @@ export const useAuthStore = create((set, get) => ({
   login: async (credentials) => {
     try {
       set({ isLoading: true });
-      const response = await api.post('/auth/login', credentials);
+            const response = await api.post('/user/auth/login', { email, password });
       
       set({ 
         user: response.data.user, 
@@ -135,7 +135,7 @@ export const useAuthStore = create((set, get) => ({
   // Logout user
   logout: async () => {
     try {
-      await api.post('/auth/logout');
+      await api.post('/user/auth/logout');
       localStorage.removeItem('user');
       localStorage.removeItem('token');
       set({ 
@@ -159,7 +159,7 @@ export const useAuthStore = create((set, get) => ({
   forgotPassword: async (email) => {
     try {
       set({ isLoading: true });
-      await api.post('/auth/forgot-password', { email });
+      await api.post('/user/auth/forgot-password', { email });
       set({ isLoading: false });
       toast.success('Password reset link sent to your email!');
       return { success: true };
@@ -175,7 +175,7 @@ export const useAuthStore = create((set, get) => ({
   resetPassword: async (token, newPassword) => {
     try {
       set({ isLoading: true });
-      await api.post('/auth/reset-password', { token, newPassword });
+      await api.post('/user/auth/reset-password', { token, newPassword });
       set({ isLoading: false });
       toast.success('Password reset successfully!');
       return { success: true };
@@ -191,7 +191,7 @@ export const useAuthStore = create((set, get) => ({
   verifyEmail: async (token) => {
     try {
       set({ isLoading: true });
-      const response = await api.post('/auth/verify-email', { token });
+      const response = await api.post('/user/auth/verify-email', { token });
       set({ isLoading: false });
       toast.success('Email verified successfully! You can now login.');
       return { success: true, message: response.data.message };
@@ -207,7 +207,7 @@ export const useAuthStore = create((set, get) => ({
   resendVerificationEmail: async (email) => {
     try {
       set({ isLoading: true });
-      const response = await api.post('/auth/resend-verification', { email });
+      const response = await api.post('/user/auth/resend-verification', { email });
       set({ isLoading: false });
       
       if (response.data.alreadyVerified) {
@@ -228,3 +228,5 @@ export const useAuthStore = create((set, get) => ({
   // Clear any errors (utility function)
   clearError: () => set({ error: null })
 }));
+
+export default useAuthStore;

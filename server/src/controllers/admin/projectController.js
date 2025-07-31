@@ -18,7 +18,7 @@ import {
   getDownloadURL, 
   deleteObject 
 } from 'firebase/storage';
-import { createNotification, sendEmailNotification } from '../notificationController.js';
+import { createNotification, sendEmailNotification } from '../user/notificationController.js';
 
 // Initialize Firebase Storage
 const firebaseStorage = getStorage();

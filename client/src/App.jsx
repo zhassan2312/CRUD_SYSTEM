@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuthStore } from './store/authStore';
+import { useAuthStore } from './store/user';
 import { useThemeMode } from './contexts/ThemeContext';
 import { useEffect } from 'react';
 

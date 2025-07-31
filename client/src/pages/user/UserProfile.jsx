@@ -37,8 +37,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useState, useEffect } from 'react';
-import { useUserStore } from '../../store/userStore';
-import { useAuthStore } from '../../store/authStore';
+import { useProfileStore } from '../../store/user';
+import { useAuthStore } from '../../store/user';
 import NotificationPreferences from '../../components/notifications/NotificationPreferences';
 
 // Validation schemas
@@ -78,7 +78,7 @@ const UserProfile = () => {
     updateUserPreferences, 
     deleteUserAccount, 
     getUserStats 
-  } = useUserStore();
+  } = useProfileStore();
   
   const { user: currentUser } = useAuthStore();
 

@@ -21,7 +21,7 @@ import {
   ZoomOut
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import useFileStore from '../../store/fileStore';
+import { useFileStore } from '../../store/user';
 
 const FilePreviewDialog = ({ open, onClose, file, projectId }) => {
   const [imageZoom, setImageZoom] = useState(100);

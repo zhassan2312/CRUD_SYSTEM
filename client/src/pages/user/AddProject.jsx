@@ -20,8 +20,8 @@ import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useNavigate } from 'react-router-dom';
-import { useProjectStore } from '../../store/projectStore';
-import { useTeacherStore } from '../../store/teacherStore';
+import { useUserProjectStore } from '../../store/user';
+import { useUserTeacherStore } from '../../store/user';
 import { useEffect, useState } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -43,8 +43,8 @@ const schema = yup.object({
 
 const AddProject = () => {
   const navigate = useNavigate();
-  const { createProject, isLoading: projectLoading } = useProjectStore();
-  const { teachers, getTeachers, isLoading: teachersLoading } = useTeacherStore();
+  const { createProject, isLoading: projectLoading } = useUserProjectStore();
+  const { teachers, getTeachers, isLoading: teachersLoading } = useUserTeacherStore();
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const {

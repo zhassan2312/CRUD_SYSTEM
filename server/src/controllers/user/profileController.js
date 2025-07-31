@@ -7,9 +7,9 @@ import {
     query,
     where
 } from 'firebase/firestore';
-import { users } from '../config/firebase.config.js';
+import { users } from '../../config/firebase.config.js';
 import { deleteObject, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../config/firebase.config.js';
+import { storage } from '../../config/firebase.config.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 

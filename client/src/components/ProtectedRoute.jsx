@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore } from '../store/user';
 import LoadingScreen from './LoadingScreen';
 
 const ProtectedRoute = ({ children, requiredRole }) => {

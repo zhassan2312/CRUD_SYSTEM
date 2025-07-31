@@ -31,10 +31,10 @@ import {
   ArrowForward,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useProjectStore } from '../../store/projectStore';
-import { useTeacherStore } from '../../store/teacherStore';
-import { useAuthStore } from '../../store/authStore';
-import useAdminStore from '../../store/adminStore';
+import { useProjectStore } from '../../store/admin';
+import { useTeacherStore } from '../../store/admin';
+import { useAuthStore } from '../../store/user';
+import { useDashboardStore } from '../../store/admin';
 import ModernPageContainer from '../../components/ui/PageContainer';
 import ModernStatsCard from '../../components/ui/StatsCard';
 import FileStatistics from '../../components/admin/FileStatistics';
@@ -44,7 +44,7 @@ const AdminDashboard = () => {
   const { allProjects, getAllProjects, updateProjectStatus, isLoading: projectsLoading } = useProjectStore();
   const { teachers, getTeachers, isLoading: teachersLoading } = useTeacherStore();
   const { user } = useAuthStore();
-  const { users, projects, fetchUsers, fetchAllProjects } = useAdminStore();
+  const { users, projects, fetchUsers, fetchAllProjects } = useDashboardStore();
 
   useEffect(() => {
     getAllProjects();

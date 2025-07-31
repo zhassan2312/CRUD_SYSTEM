@@ -46,7 +46,7 @@ import {
   Security,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import useAdminStore from '../../store/adminStore';
+import { useUserStore } from '../../store/admin';
 import PageContainer from '../../components/ui/PageContainer';
 import StatsCard from '../../components/ui/StatsCard';
 
@@ -59,7 +59,7 @@ const AdminsManagement = () => {
     deleteUser,
     dashboardStats,
     fetchDashboardStats
-  } = useAdminStore();
+  } = useUserStore();
 
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({

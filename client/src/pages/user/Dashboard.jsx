@@ -16,8 +16,8 @@ import {
 } from '@mui/material';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useProjectStore } from '../../store/projectStore';
-import { useAuthStore } from '../../store/authStore';
+import { useUserProjectStore } from '../../store/user';
+import { useAuthStore } from '../../store/user';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -27,7 +27,7 @@ import SchoolIcon from '@mui/icons-material/School';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { projects, getProjects, deleteProject, isLoading } = useProjectStore();
+  const { projects, getProjects, deleteProject, isLoading } = useUserProjectStore();
   const { user } = useAuthStore();
 
   useEffect(() => {

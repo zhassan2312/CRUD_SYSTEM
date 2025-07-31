@@ -31,7 +31,7 @@ import {
   Close
 } from '@mui/icons-material';
 import { useDropzone } from 'react-dropzone';
-import useFileStore from '../../store/fileStore';
+import { useFileStore } from '../../store/user';
 
 const FileUploadManager = ({ projectId, onUploadComplete, open, onClose }) => {
   const [files, setFiles] = useState([]);

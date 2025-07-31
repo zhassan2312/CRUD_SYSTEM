@@ -28,8 +28,8 @@ import {
   Assignment,
   AttachFile
 } from '@mui/icons-material';
-import { useProjectStore } from '../../store/projectStore';
-import { useUserStore } from '../../store/userStore';
+import { useUserProjectStore } from '../../store/user';
+import { useProfileStore } from '../../store/user';
 import ProjectFileList from '../../components/projects/ProjectFileList';
 import FileUploadManager from '../../components/projects/FileUploadManager';
 
@@ -54,8 +54,8 @@ function TabPanel({ children, value, index, ...other }) {
 const ProjectDetails = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const { user } = useUserStore();
-  const { projects, getAllProjects, allProjects, deleteProject, isLoading } = useProjectStore();
+  const { user } = useProfileStore();
+  const { projects, getAllProjects, allProjects, deleteProject, isLoading } = useUserProjectStore();
   
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);

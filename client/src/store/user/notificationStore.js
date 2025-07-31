@@ -1,8 +1,8 @@
 import { create } from 'zustand';
-import api from '../lib/api';
+import api from '../../lib/api';
 import { toast } from 'react-toastify';
 
-export const useNotificationStore = create((set, get) => ({
+const useNotificationStore = create((set, get) => ({
   // State
   notifications: [],
   unreadCount: 0,
@@ -49,7 +49,7 @@ export const useNotificationStore = create((set, get) => ({
       if (unreadOnly) params.append('unreadOnly', 'true');
       if (category) params.append('category', category);
 
-      const response = await api.get(`/notifications?${params.toString()}`);
+      const response = await api.get(`/user/notifications?${params.toString()}`);
       
       set({
         notifications: response.data.data.notifications,
@@ -70,7 +70,7 @@ export const useNotificationStore = create((set, get) => ({
   // Mark notification as read
   markAsRead: async (notificationId) => {
     try {
-      await api.put(`/notifications/${notificationId}/read`);
+      await api.put(`/user/notifications/${notificationId}/read`);
       
       // Update local state
       set(state => ({
@@ -93,7 +93,7 @@ export const useNotificationStore = create((set, get) => ({
   // Mark all notifications as read
   markAllAsRead: async () => {
     try {
-      const response = await api.put('/notifications/mark-all-read');
+      const response = await api.put('/user/notifications/mark-all-read');
       
       // Update local state
       set(state => ({
@@ -117,7 +117,7 @@ export const useNotificationStore = create((set, get) => ({
   // Delete notification
   deleteNotification: async (notificationId) => {
     try {
-      await api.delete(`/notifications/${notificationId}`);
+      await api.delete(`/user/notifications/${notificationId}`);
       
       // Update local state
       set(state => {
@@ -144,7 +144,7 @@ export const useNotificationStore = create((set, get) => ({
     try {
       set({ isLoadingPreferences: true });
       
-      const response = await api.get('/notifications/preferences');
+      const response = await api.get('/user/notifications/preferences');
       
       set({
         preferences: response.data.preferences,
@@ -165,7 +165,7 @@ export const useNotificationStore = create((set, get) => ({
     try {
       set({ isLoadingPreferences: true });
       
-      const response = await api.put('/notifications/preferences', {
+      const response = await api.put('/user/notifications/preferences', {
         preferences: newPreferences
       });
       
@@ -241,7 +241,7 @@ export const useNotificationStore = create((set, get) => ({
     try {
       // Get recent notifications (last 5 minutes)
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      const response = await api.get(`/notifications?recent=${fiveMinutesAgo}&limit=10`);
+      const response = await api.get(`/user/notifications?recent=${fiveMinutesAgo}&limit=10`);
       
       const recentNotifications = response.data.notifications || [];
       
@@ -305,3 +305,4 @@ export const useNotificationStore = create((set, get) => ({
     }
   }
 }));
+export default useNotificationStore;

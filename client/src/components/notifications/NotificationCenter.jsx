@@ -35,7 +35,7 @@ import {
   Person as PersonIcon,
   Announcement as AnnouncementIcon
 } from '@mui/icons-material';
-import { useNotificationStore } from '../../store/notificationStore';
+import { useUserNotificationStore } from '../../store/user';
 
 const NotificationCenter = ({ open, onClose }) => {
   const [currentTab, setCurrentTab] = useState('all');
@@ -52,7 +52,7 @@ const NotificationCenter = ({ open, onClose }) => {
     filterNotifications,
     goToPage,
     formatNotificationTime
-  } = useNotificationStore();
+  } = useUserNotificationStore();
 
   useEffect(() => {
     if (open) {

@@ -45,7 +45,7 @@ import {
   Warning,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import useAdminStore from '../../store/adminStore';
+import { useTeacherStore } from '../../store/admin';
 import PageContainer from '../../components/ui/PageContainer';
 import StatsCard from '../../components/ui/StatsCard';
 
@@ -58,7 +58,7 @@ const TeachersManagement = () => {
     deleteUser,
     dashboardStats,
     fetchDashboardStats
-  } = useAdminStore();
+  } = useTeacherStore();
 
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({

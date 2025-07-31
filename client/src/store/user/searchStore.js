@@ -1,8 +1,8 @@
 import { create } from 'zustand';
-import api from '../lib/api';
+import api from '../../lib/api';
 import { toast } from 'react-toastify';
 
-export const useSearchStore = create((set, get) => ({
+const useSearchStore = create((set, get) => ({
   // State
   searchResults: [],
   searchFilters: {
@@ -46,7 +46,7 @@ export const useSearchStore = create((set, get) => ({
         }
       });
 
-      const response = await api.get(`/projects/search?${queryParams.toString()}`);
+      const response = await api.get(`/user/projects/search?${queryParams.toString()}`);
       
       set({
         searchResults: response.data.data.projects,
@@ -69,7 +69,7 @@ export const useSearchStore = create((set, get) => ({
     try {
       set({ isLoadingFilters: true });
       
-      const response = await api.get('/projects/search/filters');
+      const response = await api.get('/user/projects/search/filters');
       
       set({
         searchFilters: response.data.filters,
@@ -147,3 +147,5 @@ export const useSearchStore = create((set, get) => ({
     return text.replace(regex, '<mark>$1</mark>');
   }
 }));
+
+export default useSearchStore;

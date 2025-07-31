@@ -52,13 +52,12 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format, isAfter, isBefore, isEqual } from 'date-fns';
-import { useProjectStore } from '../../store/projectStore';
-import useAdminStore from '../../store/adminStore';
+import { useProjectStore } from '../../store/admin';
 import PageContainer from '../../components/ui/PageContainer';
 
 const BulkProjectManagement = () => {
-  const { allProjects, getAllProjects } = useProjectStore();
-  const { bulkUpdateProjects } = useAdminStore();
+  const { allProjects, getAllProjects, bulkUpdateProjects } = useProjectStore();
+
 
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [bulkDialog, setBulkDialog] = useState({

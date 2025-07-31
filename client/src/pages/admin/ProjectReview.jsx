@@ -35,8 +35,8 @@ import {
   Grid
 } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { useProjectStore } from '../../store/projectStore';
-import { useAuthStore } from '../../store/authStore';
+import { useProjectStore } from '../../store/admin';
+import { useAuthStore } from '../../store/user';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
