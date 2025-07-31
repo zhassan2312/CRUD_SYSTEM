@@ -6,8 +6,8 @@ import {
   deleteNotification,
   getNotificationPreferences,
   updateNotificationPreferences
-} from "../controllers/notificationController.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
+} from "../../controllers/user/notificationController.js";
+import { authMiddleware } from "../../middlewares/authMiddleware.js";
 
 const router = Router();
 

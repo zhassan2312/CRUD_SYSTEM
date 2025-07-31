@@ -8,14 +8,14 @@ import {
   verifyEmail,
   logoutUser,
   resendVerificationEmail
-} from "../controllers/authController.js";
-import { validate } from "../middlewares/validateMiddleware.js";
+} from "../../controllers/user/authController.js";
+import { validate } from "../../middlewares/validateMiddleware.js";
 import {
   userRegistrationSchema,
   userLoginSchema,
   passwordResetSchema,
   emailSchema
-} from "../utils/validators.js";
+} from "../../utils/validators.js";
 
 const router = Router();
 

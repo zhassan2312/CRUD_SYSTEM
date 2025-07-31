@@ -1,8 +1,8 @@
-import { users, admin, addDoc, mail, doc, getDoc, getDocs, deleteDoc, updateDoc } from '../config/firebase.config.js';
+import { users, admin, addDoc, mail, doc, getDoc, getDocs, deleteDoc, updateDoc } from '../../config/firebase.config.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import env from '../config/env.config.js';
-import { uploadFileAndGetUrl } from '../config/gcloud.config.js';
+import env from '../../config/env.config.js';
+import { uploadFileAndGetUrl } from '../../config/gcloud.config.js';
 
 const JWT_SECRET = env.JWT_SECRET;
 

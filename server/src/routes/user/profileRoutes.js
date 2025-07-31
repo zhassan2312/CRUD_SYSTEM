@@ -7,8 +7,8 @@ import {
     updateUserPreferences,
     deleteUserAccount,
     getUserStats
-} from "../controllers/userController.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
+} from "../../controllers/user/profileController.js";
+import { authMiddleware } from "../../middlewares/authMiddleware.js";
 
 const router = Router();
 

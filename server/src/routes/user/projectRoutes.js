@@ -4,24 +4,20 @@ import {
   getAllProjectsForUser,
   createProject,
   uploadProjectImage,
-  getAllProjects,
-  updateProjectStatus,
   deleteProject,
   searchProjects,
   getSearchFilters
-} from "../controllers/projectController.js";
+} from "../../controllers/user/projectController.js";
 import {
   uploadProjectFiles,
   getProjectFiles,
   deleteProjectFile,
   downloadFile as downloadProjectFile,
-  previewFile as previewProjectFile,
-  getFileStatistics
-} from "../controllers/fileManager.controller.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
-import { checkRole } from "../middlewares/roleMiddleware.js";
-import { validate } from "../middlewares/validateMiddleware.js";
-import { projectSchema } from "../utils/validators.js";
+  previewFile as previewProjectFile
+} from "../../controllers/user/fileManagerController.js";
+import { authMiddleware } from "../../middlewares/authMiddleware.js";
+import { validate } from "../../middlewares/validateMiddleware.js";
+import { projectSchema } from "../../utils/validators.js";
 
 const router = Router();
 
@@ -105,10 +101,5 @@ router.post('/:projectId/upload-image', imageUpload.single('projectImage'), uplo
 
 // Project management routes
 router.delete('/:projectId', deleteProject);
-
-// Admin project routes
-router.get('/admin', checkRole('admin'), getAllProjects);
-router.put('/:projectId/status', checkRole('admin'), updateProjectStatus);
-router.get('/admin/file-statistics', checkRole('admin'), getFileStatistics);
 
 export default router;

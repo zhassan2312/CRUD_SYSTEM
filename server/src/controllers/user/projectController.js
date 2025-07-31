@@ -10,7 +10,7 @@ import {
   query,
   where,
   orderBy
-} from '../config/firebase.config.js';
+} from '../../config/firebase.config.js';
 import { 
   getStorage, 
   ref, 
@@ -18,7 +18,7 @@ import {
   getDownloadURL, 
   deleteObject 
 } from 'firebase/storage';
-import { createNotification, sendEmailNotification } from './notificationController.js';
+import { createNotification, sendEmailNotification } from '../notificationController.js';
 
 // Initialize Firebase Storage
 const firebaseStorage = getStorage();
@@ -300,217 +300,7 @@ export const uploadProjectImage = async (req, res) => {
   }
 };
 
-// Get all projects (Admin only)
-export const getAllProjects = async (req, res) => {
-  try {
-    const projectsRef = collection(db, 'projects');
-    const snapshot = await getDocs(projectsRef);
-    const projects = [];
-    
-    // Get all teachers for reference
-    const teachersRef = collection(db, 'teachers');
-    const teachersSnapshot = await getDocs(teachersRef);
-    const teachersMap = {};
-    
-    teachersSnapshot.forEach((doc) => {
-      teachersMap[doc.id] = {
-        id: doc.id,
-        ...doc.data()
-      };
-    });
-    
-    // Get all users for student names
-    const usersRef = collection(db, 'users');
-    const usersSnapshot = await getDocs(usersRef);
-    const usersMap = {};
-    
-    usersSnapshot.forEach((doc) => {
-      usersMap[doc.id] = {
-        id: doc.id,
-        ...doc.data()
-      };
-    });
-    
-    snapshot.forEach((doc) => {
-      const projectData = doc.data();
-      
-      // Populate supervisor and co-supervisor details
-      const supervisor = teachersMap[projectData.supervisorId];
-      const coSupervisor = projectData.coSupervisorId ? teachersMap[projectData.coSupervisorId] : null;
-      
-      // Get student name from user who created the project
-      const student = usersMap[projectData.createdBy];
-      
-      projects.push({
-        id: doc.id,
-        ...projectData,
-        studentName: student ? student.name : 'Unknown Student',
-        studentEmail: student ? student.email : '',
-        supervisor: supervisor ? {
-          id: supervisor.id,
-          name: supervisor.name,
-          email: supervisor.email
-        } : null,
-        coSupervisor: coSupervisor ? {
-          id: coSupervisor.id,
-          name: coSupervisor.name,
-          email: coSupervisor.email
-        } : null
-      });
-    });
-
-    // Sort by createdAt on the client side
-    projects.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    res.status(200).json({
-      message: "All projects retrieved successfully",
-      projects
-    });
-
-  } catch (error) {
-    console.error("Get all projects error:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-// Update project status (Admin only)
-export const updateProjectStatus = async (req, res) => {
-  try {
-    const { projectId } = req.params;
-    const { status, reviewComment, sendEmail } = req.body;
-    const reviewerId = req.user.id;
-    const reviewerName = req.user.fullName || req.user.name || 'Admin';
-
-    // Validate status
-    const validStatuses = ['pending', 'under-review', 'approved', 'rejected', 'revision-required'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: "Invalid status value" });
-    }
-
-    const projectRef = doc(db, 'projects', projectId);
-    const projectDoc = await getDoc(projectRef);
-
-    if (!projectDoc.exists()) {
-      return res.status(404).json({ message: "Project not found" });
-    }
-
-    const projectData = projectDoc.data();
-    
-    // Create status history entry
-    const statusEntry = {
-      status,
-      comment: reviewComment || '',
-      reviewedBy: reviewerName,
-      reviewerId: reviewerId,
-      timestamp: new Date().toISOString()
-    };
-
-    // Get existing status history or create new array
-    const statusHistory = projectData.statusHistory || [];
-    statusHistory.push(statusEntry);
-
-    // Update project with new status and history
-    const updateData = {
-      status,
-      lastReviewedAt: new Date().toISOString(),
-      lastReviewedBy: reviewerName,
-      statusHistory,
-      updatedAt: new Date().toISOString()
-    };
-
-    await updateDoc(projectRef, updateData);
-
-    // Create in-app notification for project owner
-    try {
-      await createNotification(projectData.createdBy, {
-        title: `Project ${status === 'approved' ? 'Approved' : status === 'rejected' ? 'Rejected' : 'Status Updated'}`,
-        message: `Your project "${projectData.title}" has been ${status.replace('-', ' ')}${reviewComment ? `. Review comment: "${reviewComment}"` : ''}`,
-        type: status === 'approved' ? 'success' : status === 'rejected' ? 'error' : 'info',
-        category: 'project',
-        data: {
-          projectId,
-          projectTitle: projectData.title,
-          oldStatus: projectData.status,
-          newStatus: status,
-          reviewComment,
-          reviewerName,
-          actionRequired: status === 'revision-required',
-          timestamp: new Date().toISOString()
-        }
-      });
-
-      // Also send notification to project supervisor if status is approved
-      if (status === 'approved' && projectData.supervisorId) {
-        await createNotification(projectData.supervisorId, {
-          title: 'Project Approved',
-          message: `The project "${projectData.title}" you are supervising has been approved by ${reviewerName}`,
-          type: 'success',
-          category: 'project',
-          data: {
-            projectId,
-            projectTitle: projectData.title,
-            status: 'approved',
-            reviewerName,
-            role: 'supervisor'
-          }
-        });
-      }
-
-      console.log(`📬 Notification sent to project creator for status change: ${status}`);
-    } catch (notificationError) {
-      console.error("Error creating notification:", notificationError);
-    }
-
-    // Send email notification automatically for project approvals/rejections
-    if ((status === 'approved' || status === 'rejected') && projectData.createdBy) {
-      try {
-        await sendStatusChangeEmail({
-          projectId,
-          projectTitle: projectData.title,
-          newStatus: status,
-          reviewComment,
-          reviewerName,
-          creatorId: projectData.createdBy
-        });
-      } catch (emailError) {
-        console.error("Error sending status change email:", emailError);
-        // Don't fail the request if email fails
-      }
-    }
-
-    // Send optional email for other status changes if requested
-    if (sendEmail && projectData.createdBy && status !== 'approved' && status !== 'rejected') {
-      try {
-        await sendStatusChangeEmail({
-          projectId,
-          projectTitle: projectData.title,
-          newStatus: status,
-          reviewComment,
-          reviewerName,
-          creatorId: projectData.createdBy
-        });
-      } catch (emailError) {
-        console.error("Error sending status change email:", emailError);
-        // Don't fail the request if email fails
-      }
-    }
-
-    res.status(200).json({ 
-      message: "Project status updated successfully",
-      project: {
-        id: projectId,
-        status,
-        statusHistory,
-        lastReviewedAt: updateData.lastReviewedAt,
-        lastReviewedBy: reviewerName
-      }
-    });
-
-  } catch (error) {
-    console.error("Update project status error:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
+// Removed admin-only functions from user controller
 
 // Helper function to send status change emails
 const sendStatusChangeEmail = async ({ projectId, projectTitle, newStatus, reviewComment, reviewerName, creatorId }) => {
@@ -678,10 +468,8 @@ export const searchProjects = async (req, res) => {
     const projectsRef = collection(db, 'projects');
     let queries = [];
 
-    // Base query - if not admin, only show user's projects
-    if (userRole !== 'admin') {
-      queries.push(where('createdBy', '==', userId));
-    }
+    // Base query - only show user's projects
+    queries.push(where('createdBy', '==', userId));
 
     // Status filter
     if (status) {

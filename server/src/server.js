@@ -4,12 +4,8 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 
 // Import routes
-import authRoutes from './routes/authRoutes.js';
-import projectRoutes from './routes/projectRoutes.js';
-import teacherRoutes from './routes/teacherRoutes.js';
-import userRoutes from './routes/userRoutes.js';
-import notificationRoutes from './routes/notificationRoutes.js';
-import adminRoutes from './routes/adminRoutes.js';
+import userRoutes from './routes/user/index.js';
+import adminRoutes from './routes/admin/index.js';
 
 // Import utilities
 import { globalErrorHandler } from './utils/responseHelpers.js';
@@ -31,11 +27,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/projects', projectRoutes);
-app.use('/api/teachers', teacherRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/notifications', notificationRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Health check endpoint

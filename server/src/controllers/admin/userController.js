@@ -1,4 +1,4 @@
-import { admin } from '../config/firebase.config.js';
+import { admin } from '../../config/firebase.config.js';
 import { FieldValue } from 'firebase-admin/firestore';
 
 const db = admin.firestore();
