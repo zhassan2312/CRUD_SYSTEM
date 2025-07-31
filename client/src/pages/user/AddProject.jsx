@@ -44,7 +44,7 @@ const schema = yup.object({
 const AddProject = () => {
   const navigate = useNavigate();
   const { createProject, isLoading: projectLoading } = useUserProjectStore();
-  const { teachers, getTeachers, isLoading: teachersLoading } = useUserTeacherStore();
+  const { teachers, getAllTeachers, isLoading: teachersLoading } = useUserTeacherStore();
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const {
@@ -69,8 +69,8 @@ const AddProject = () => {
   });
 
   useEffect(() => {
-    getTeachers();
-  }, [getTeachers]);
+    getAllTeachers();
+  }, [getAllTeachers]);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];

@@ -193,22 +193,10 @@ const ModernSidebar = ({ children, darkMode, toggleDarkMode }) => {
     return [
       ...commonItems,
       {
-        text: 'My Projects',
-        icon: <FolderOpen />,
-        path: '/projects',
-        active: location.pathname.startsWith('/project'),
-      },
-      {
         text: 'Add Project',
         icon: <Add />,
         path: '/project',
         active: location.pathname === '/project',
-      },
-      {
-        text: 'Search',
-        icon: <Search />,
-        path: '/search',
-        active: location.pathname === '/search',
       },
     ];
   };

@@ -64,9 +64,10 @@ const ProjectReview = () => {
   }, [getAllProjects]);
 
   // Filter projects by status for tabs
+  const projectsData = projects?.data || [];
   const getFilteredProjects = (status) => {
-    if (status === 'all') return projects || [];
-    return (projects || []).filter(project => project.status === status);
+    if (status === 'all') return projectsData;
+    return projectsData.filter(project => project.status === status);
   };
 
   const getStatusColor = (status) => {
@@ -127,7 +128,7 @@ const ProjectReview = () => {
   };
 
   const tabLabels = [
-    { label: 'All Projects', value: 'all', count: projects?.length || 0 },
+    { label: 'All Projects', value: 'all', count: projectsData.length },
     { label: 'Pending', value: 'pending', count: getFilteredProjects('pending').length },
     { label: 'Under Review', value: 'under-review', count: getFilteredProjects('under-review').length },
     { label: 'Approved', value: 'approved', count: getFilteredProjects('approved').length },

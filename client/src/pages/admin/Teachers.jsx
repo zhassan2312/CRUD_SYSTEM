@@ -45,20 +45,23 @@ import {
   Warning,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import { useTeacherStore } from '../../store/admin';
+import { useUserStore, useDashboardStore } from '../../store/admin';
 import PageContainer from '../../components/ui/PageContainer';
 import StatsCard from '../../components/ui/StatsCard';
 
 const TeachersManagement = () => {
   const {
     users,
-    fetchUsers,
+    getAllUsers,
     updateUserRole,
     updateUserStatus,
-    deleteUser,
+    deleteUser
+  } = useUserStore();
+
+  const {
     dashboardStats,
-    fetchDashboardStats
-  } = useTeacherStore();
+    getDashboardStats
+  } = useDashboardStore();
 
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
@@ -84,9 +87,9 @@ const TeachersManagement = () => {
   useEffect(() => {
     // Always filter for teachers only
     const teacherFilters = { ...filters, role: 'teacher' };
-    fetchUsers(page, 10, teacherFilters);
-    fetchDashboardStats();
-  }, [page, filters, fetchUsers, fetchDashboardStats]);
+    getAllUsers({ page, limit: 10, ...teacherFilters });
+    getDashboardStats();
+  }, [page, filters, getAllUsers, getDashboardStats]);
 
   const handleFilterChange = (field, value) => {
     if (field === 'role') return; // Prevent changing role filter for teachers page
@@ -205,8 +208,8 @@ const TeachersManagement = () => {
       showRefresh
       onRefresh={() => {
         const teacherFilters = { ...filters, role: 'teacher' };
-        fetchUsers(page, 10, teacherFilters);
-        fetchDashboardStats();
+        getAllUsers({ page, limit: 10, ...teacherFilters });
+        getDashboardStats();
       }}
     >
       {/* Stats Cards */}
@@ -304,7 +307,7 @@ const TeachersManagement = () => {
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">
-              Teachers ({users.pagination?.total || 0})
+              Teachers ({users?.pagination?.total || 0})
             </Typography>
             <Button
               variant="contained"
@@ -344,17 +347,17 @@ const TeachersManagement = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Avatar
                             src={user.profilePicture}
-                            alt={user.firstName}
+                            alt={user.fullName}
                             sx={{ width: 40, height: 40 }}
                           >
-                            {user.firstName?.[0]?.toUpperCase()}
+                            {user.fullName?.[0]?.toUpperCase()}
                           </Avatar>
                           <Box>
                             <Typography variant="subtitle2" fontWeight={600}>
-                              {user.firstName} {user.lastName}
+                              {user.fullName} 
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              @{user.username}
+                              @{user.fullName}
                             </Typography>
                           </Box>
                         </Box>
@@ -428,10 +431,10 @@ const TeachersManagement = () => {
           </TableContainer>
 
           {/* Pagination */}
-          {users.pagination?.totalPages > 1 && (
+          {users?.pagination?.totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
               <Pagination
-                count={users.pagination.totalPages}
+                count={users?.pagination?.totalPages || 1}
                 page={page}
                 onChange={(e, newPage) => setPage(newPage)}
                 color="primary"
@@ -502,7 +505,7 @@ const TeachersManagement = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete teacher "{deleteDialog.user?.firstName} {deleteDialog.user?.lastName}"?
+            Are you sure you want to delete teacher "{deleteDialog.user?.fullName} {deleteDialog.user?.lastName}"?
             This action cannot be undone.
           </Typography>
         </DialogContent>

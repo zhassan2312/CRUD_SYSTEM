@@ -34,24 +34,23 @@ import { useNavigate } from 'react-router-dom';
 import { useProjectStore } from '../../store/admin';
 import { useTeacherStore } from '../../store/admin';
 import { useAuthStore } from '../../store/user';
-import { useDashboardStore } from '../../store/admin';
+import { useUserStore } from '../../store/admin';
 import ModernPageContainer from '../../components/ui/PageContainer';
 import ModernStatsCard from '../../components/ui/StatsCard';
 import FileStatistics from '../../components/admin/FileStatistics';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { allProjects, getAllProjects, updateProjectStatus, isLoading: projectsLoading } = useProjectStore();
-  const { teachers, getTeachers, isLoading: teachersLoading } = useTeacherStore();
+  const { projects: adminProjects, getAllProjects, updateProjectStatus, isLoading: projectsLoading } = useProjectStore();
+  const { teachers, getAllTeachers, isLoading: teachersLoading } = useTeacherStore();
   const { user } = useAuthStore();
-  const { users, projects, fetchUsers, fetchAllProjects } = useDashboardStore();
+  const { users, getAllUsers } = useUserStore();
 
   useEffect(() => {
     getAllProjects();
-    getTeachers();
-    fetchUsers();
-    fetchAllProjects();
-  }, [getAllProjects, getTeachers, fetchUsers, fetchAllProjects]);
+    getAllTeachers();
+    getAllUsers();
+  }, [getAllProjects, getAllTeachers, getAllUsers]);
 
   const handleStatusChange = async (projectId, status) => {
     const reviewData = {
@@ -74,16 +73,17 @@ const AdminDashboard = () => {
     }
   };
 
-  // Calculate stats
-  const recentProjects = allProjects.slice(0, 5);
-  const pendingCount = allProjects.filter(p => p.status === 'pending' || !p.status).length;
-  const approvedCount = allProjects.filter(p => p.status === 'approved').length;
-  const rejectedCount = allProjects.filter(p => p.status === 'rejected').length;
+  // Calculate stats - with null checks and correct data source
+  const allProjectsData = adminProjects?.data || [];
+  const recentProjects = allProjectsData.slice(0, 5);
+  const pendingCount = allProjectsData.filter(p => p.status === 'pending' || !p.status).length;
+  const approvedCount = allProjectsData.filter(p => p.status === 'approved').length;
+  const rejectedCount = allProjectsData.filter(p => p.status === 'rejected').length;
 
   const totalUsers = users?.data?.length || 0;
   const totalStudents = users?.data?.filter(u => u.role === 'user')?.length || 0;
   const totalTeachers = teachers?.length || 0;
-  const totalProjects = allProjects?.length || 0;
+  const totalProjects = allProjectsData.length;
 
   return (
     <ModernPageContainer
@@ -93,9 +93,8 @@ const AdminDashboard = () => {
       showRefresh
       onRefresh={() => {
         getAllProjects();
-        getTeachers();
-        fetchUsers();
-        fetchAllProjects();
+        getAllTeachers();
+        getAllUsers();
       }}
       badge={{
         label: 'Admin Panel',

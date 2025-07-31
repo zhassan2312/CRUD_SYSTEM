@@ -47,20 +47,24 @@ import {
   Warning,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import { useUserStore } from '../../store/admin';
+import { useUserStore, useDashboardStore } from '../../store/admin';
 import PageContainer from '../../components/ui/PageContainer';
 import StatsCard from '../../components/ui/StatsCard';
 
 const UsersManagement = () => {
   const {
     users,
-    fetchUsers,
+    getAllUsers,
     updateUserRole,
     updateUserStatus,
-    deleteUser,
-    dashboardStats,
-    fetchDashboardStats
+    deleteUser
   } = useUserStore();
+
+  console.log("users", users);
+  const {
+    dashboardStats,
+    getDashboardStats
+  } = useDashboardStore();
 
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
@@ -86,9 +90,9 @@ const UsersManagement = () => {
   useEffect(() => {
     // Fetch only users with role 'user' (students)
     const userFilters = { ...filters, role: filters.role || 'user' };
-    fetchUsers(page, 10, userFilters);
-    fetchDashboardStats();
-  }, [page, filters, fetchUsers, fetchDashboardStats]);
+    getAllUsers({ page, limit: 10, ...userFilters });
+    getDashboardStats();
+  }, [page, filters, getAllUsers, getDashboardStats]);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
@@ -206,8 +210,8 @@ const UsersManagement = () => {
       showRefresh
       onRefresh={() => {
         const userFilters = { ...filters, role: filters.role || 'user' };
-        fetchUsers(page, 10, userFilters);
-        fetchDashboardStats();
+        getAllUsers({ page, limit: 10, ...userFilters });
+        getDashboardStats();
       }}
     >
       {/* Stats Cards */}
@@ -320,7 +324,7 @@ const UsersManagement = () => {
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">
-              Users ({users.pagination?.total || 0})
+              Users ({users?.pagination?.total || 0})
             </Typography>
             <Button
               variant="contained"
@@ -360,17 +364,17 @@ const UsersManagement = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Avatar
                             src={user.profilePicture}
-                            alt={user.firstName}
+                            alt={user.fullName}
                             sx={{ width: 40, height: 40 }}
                           >
-                            {user.firstName?.[0]?.toUpperCase()}
+                            {user.fullName?.[0]?.toUpperCase()}
                           </Avatar>
                           <Box>
                             <Typography variant="subtitle2" fontWeight={600}>
-                              {user.firstName} {user.lastName}
+                              {user.fullName} 
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              @{user.username}
+                              @{user.fullName}
                             </Typography>
                           </Box>
                         </Box>
@@ -387,7 +391,11 @@ const UsersManagement = () => {
                       <TableCell>
                         <Chip
                           icon={getStatusIcon(user.status)}
-                          label={user.status?.charAt(0).toUpperCase() + user.status?.slice(1)}
+                          label={
+                            user.status
+                              ? user.status.charAt(0).toUpperCase() + user.status.slice(1)
+                              : 'N/A'
+                          }
                           color={getStatusColor(user.status)}
                           size="small"
                         />
@@ -444,10 +452,10 @@ const UsersManagement = () => {
           </TableContainer>
 
           {/* Pagination */}
-          {users.pagination?.totalPages > 1 && (
+          {users?.pagination?.totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
               <Pagination
-                count={users.pagination.totalPages}
+                count={users?.pagination?.totalPages || 1}
                 page={page}
                 onChange={(e, newPage) => setPage(newPage)}
                 color="primary"
@@ -518,7 +526,7 @@ const UsersManagement = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete user "{deleteDialog.user?.firstName} {deleteDialog.user?.lastName}"?
+            Are you sure you want to delete user "{deleteDialog.user?.fullName} {deleteDialog.user?.lastName}"?
             This action cannot be undone.
           </Typography>
         </DialogContent>

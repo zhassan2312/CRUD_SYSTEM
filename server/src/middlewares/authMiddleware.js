@@ -1,73 +1,50 @@
+// Backup of original auth middleware for restoration
 import jwt from 'jsonwebtoken';
-import env from '../config/env.config.js';
-import { doc, getDoc, users } from '../config/firebase.config.js';
 
-const JWT_SECRET = env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-// Authentication middleware
-export const authMiddleware = async (req, res, next) => {
+export const authMiddleware = (req, res, next) => {
   try {
-    const token = req.cookies?.authToken || req.headers.authorization?.split(' ')[1];
-    
+    // Get token from header or cookie
+    const token = req.headers.authorization?.split(' ')[1] || req.cookies.authToken;
+
     if (!token) {
-      return res.status(401).json({ message: 'Access token required' });
+      return res.status(401).json({ message: 'Access denied. No token provided.' });
     }
 
-    // Verify JWT token
+    // Verify token
     const decoded = jwt.verify(token, JWT_SECRET);
-    
-    // Get user data from Firestore
-    const userRef = doc(users, decoded.id);
-    const userDoc = await getDoc(userRef);
-    
-    if (!userDoc.exists()) {
-      return res.status(401).json({ message: 'Invalid token - user not found' });
-    }
-    
-    const userData = userDoc.data();
-    
-    // Attach user info to request
-    req.user = {
-      id: decoded.id,
-      uid: decoded.id, // Add uid for Firebase compatibility
-      email: userData.email,
-      role: userData.role,
-      fullName: userData.fullName
-    };
-    
+    req.user = decoded;
     next();
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token expired' });
-    }
     console.error('Auth middleware error:', error);
-    return res.status(500).json({ message: 'Authentication error' });
+    res.status(401).json({ message: 'Invalid token.' });
   }
 };
 
 // Admin authentication middleware
-export const authenticateAdmin = async (req, res, next) => {
+export const authenticateAdmin = (req, res, next) => {
   try {
-    // First, authenticate the user
-    await authMiddleware(req, res, () => {});
-    
-    // Then check if user is admin
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ 
-        success: false,
-        message: 'Access denied. Admin privileges required.' 
-      });
+    // Get token from header or cookie
+    const token = req.headers.authorization?.split(' ')[1] || req.cookies.authToken;
+
+    if (!token) {
+      return res.status(401).json({ message: 'Access token required' });
     }
+
+    // Verify token
+    const decoded = jwt.verify(token, JWT_SECRET);
     
+    // Check if user has admin role
+    if (decoded.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    req.user = decoded;
     next();
   } catch (error) {
     console.error('Admin auth middleware error:', error);
-    return res.status(500).json({ 
-      success: false,
-      message: 'Authentication error' 
-    });
+    return res.status(401).json({ message: 'Invalid token' });
   }
 };
+

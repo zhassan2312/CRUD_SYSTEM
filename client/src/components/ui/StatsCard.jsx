@@ -105,7 +105,7 @@ const ModernStatsCard = ({
             lineHeight: 1.2,
           }}
         >
-          {typeof value === 'number' ? value.toLocaleString() : value}
+          {typeof value === 'number' && !isNaN(value) ? value.toLocaleString() : (value || 0)}
         </Typography>
 
         {/* Title */}

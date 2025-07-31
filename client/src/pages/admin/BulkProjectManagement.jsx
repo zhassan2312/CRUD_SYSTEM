@@ -56,7 +56,9 @@ import { useProjectStore } from '../../store/admin';
 import PageContainer from '../../components/ui/PageContainer';
 
 const BulkProjectManagement = () => {
-  const { allProjects, getAllProjects, bulkUpdateProjects } = useProjectStore();
+  const { projects, getAllProjects, bulkUpdateProjects } = useProjectStore();
+
+  const allProjects = projects?.data || [];
 
 
   const [selectedProjects, setSelectedProjects] = useState([]);

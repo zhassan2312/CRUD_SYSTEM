@@ -18,27 +18,24 @@ export const getAllUsers = async (req, res) => {
 
     let query = db.collection('users');
 
-    // Apply filters
+    // Apply filters one at a time to avoid complex index requirements
     if (role) {
       query = query.where('role', '==', role);
     }
 
-    if (status) {
+    if (status && !role) {
+      // Only apply status filter if role is not filtered to avoid compound index
       query = query.where('status', '==', status);
     }
 
-    // Apply sorting
-    query = query.orderBy(sortBy, sortOrder);
+    // Apply sorting only if no filters are applied, or just sort by document ID
+    if (!role && !status) {
+      query = query.orderBy(sortBy, sortOrder);
+    }
 
-    // Get total count for pagination
-    const totalSnapshot = await query.get();
-    const total = totalSnapshot.size;
-
-    // Apply pagination
-    const offset = (page - 1) * limit;
-    const paginatedQuery = query.offset(offset).limit(parseInt(limit));
-    const snapshot = await paginatedQuery.get();
-
+    // Get all matching documents
+    const snapshot = await query.get();
+    
     let users = [];
     snapshot.forEach(doc => {
       const userData = doc.data();
@@ -50,7 +47,12 @@ export const getAllUsers = async (req, res) => {
       });
     });
 
-    // Apply search filter (client-side for simplicity)
+    // Apply additional filters client-side
+    if (status && role) {
+      users = users.filter(user => user.status === status);
+    }
+
+    // Apply search filter (client-side)
     if (search) {
       const searchLower = search.toLowerCase();
       users = users.filter(user => 
@@ -61,11 +63,48 @@ export const getAllUsers = async (req, res) => {
       );
     }
 
+    // Sort client-side if we couldn't sort in the query
+    if (role || status) {
+      users.sort((a, b) => {
+        let aVal = a[sortBy];
+        let bVal = b[sortBy];
+        
+        // Handle date sorting
+        if (sortBy === 'createdAt') {
+          aVal = aVal ? new Date(aVal.seconds ? aVal.seconds * 1000 : aVal).getTime() : 0;
+          bVal = bVal ? new Date(bVal.seconds ? bVal.seconds * 1000 : bVal).getTime() : 0;
+        }
+        
+        // Handle string sorting
+        if (typeof aVal === 'string') {
+          aVal = aVal.toLowerCase();
+        }
+        if (typeof bVal === 'string') {
+          bVal = bVal.toLowerCase();
+        }
+        
+        // Handle null/undefined values
+        if (aVal == null) aVal = '';
+        if (bVal == null) bVal = '';
+        
+        if (sortOrder === 'desc') {
+          return bVal > aVal ? 1 : bVal < aVal ? -1 : 0;
+        }
+        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+      });
+    }
+
+    const total = users.length;
+    
+    // Apply pagination client-side
+    const offset = (page - 1) * limit;
+    const paginatedUsers = users.slice(offset, offset + parseInt(limit));
+
     const totalPages = Math.ceil(total / limit);
 
     res.status(200).json({
       success: true,
-      users,
+      users: paginatedUsers,
       pagination: {
         currentPage: parseInt(page),
         totalPages,

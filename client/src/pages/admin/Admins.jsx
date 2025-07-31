@@ -46,20 +46,23 @@ import {
   Security,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import { useUserStore } from '../../store/admin';
+import { useUserStore, useDashboardStore } from '../../store/admin';
 import PageContainer from '../../components/ui/PageContainer';
 import StatsCard from '../../components/ui/StatsCard';
 
 const AdminsManagement = () => {
   const {
     users,
-    fetchUsers,
+    getAllUsers,
     updateUserRole,
     updateUserStatus,
-    deleteUser,
-    dashboardStats,
-    fetchDashboardStats
+    deleteUser
   } = useUserStore();
+
+  const {
+    dashboardStats,
+    getDashboardStats
+  } = useDashboardStore();
 
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
@@ -85,9 +88,9 @@ const AdminsManagement = () => {
   useEffect(() => {
     // Always filter for admins only
     const adminFilters = { ...filters, role: 'admin' };
-    fetchUsers(page, 10, adminFilters);
-    fetchDashboardStats();
-  }, [page, filters, fetchUsers, fetchDashboardStats]);
+    getAllUsers({ page, limit: 10, ...adminFilters });
+    getDashboardStats();
+  }, [page, filters, getAllUsers, getDashboardStats]);
 
   const handleFilterChange = (field, value) => {
     if (field === 'role') return; // Prevent changing role filter for admins page
@@ -206,8 +209,8 @@ const AdminsManagement = () => {
       showRefresh
       onRefresh={() => {
         const adminFilters = { ...filters, role: 'admin' };
-        fetchUsers(page, 10, adminFilters);
-        fetchDashboardStats();
+        getAllUsers({ page, limit: 10, ...adminFilters });
+        getDashboardStats();
       }}
     >
       {/* Stats Cards */}
@@ -224,7 +227,7 @@ const AdminsManagement = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatsCard
             title="Active Admins"
-            value={Math.floor((userStats.admins || 0) * 0.95)}
+            value={Math.floor((Number(userStats.admins) || 0) * 0.95) || 0}
             icon={<CheckCircle />}
             trend="95% active rate"
             trendUp={true}
@@ -305,7 +308,7 @@ const AdminsManagement = () => {
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">
-              Administrators ({users.pagination?.total || 0})
+              Administrators ({users?.pagination?.total || 0})
             </Typography>
             <Button
               variant="contained"
@@ -346,17 +349,17 @@ const AdminsManagement = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Avatar
                             src={user.profilePicture}
-                            alt={user.firstName}
+                            alt={user.fullName}
                             sx={{ width: 40, height: 40, bgcolor: 'error.main' }}
                           >
-                            {user.firstName?.[0]?.toUpperCase()}
+                            {user.fullName?.[0]?.toUpperCase()}
                           </Avatar>
                           <Box>
                             <Typography variant="subtitle2" fontWeight={600}>
-                              {user.firstName} {user.lastName}
+                              {user.fullName} 
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              @{user.username}
+                              @{user.fullName}
                             </Typography>
                           </Box>
                         </Box>
@@ -430,10 +433,10 @@ const AdminsManagement = () => {
           </TableContainer>
 
           {/* Pagination */}
-          {users.pagination?.totalPages > 1 && (
+          {users?.pagination?.totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
               <Pagination
-                count={users.pagination.totalPages}
+                count={users?.pagination?.totalPages || 1}
                 page={page}
                 onChange={(e, newPage) => setPage(newPage)}
                 color="primary"
@@ -504,7 +507,7 @@ const AdminsManagement = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete administrator "{deleteDialog.user?.firstName} {deleteDialog.user?.lastName}"?
+            Are you sure you want to delete administrator "{deleteDialog.user?.fullName} {deleteDialog.user?.lastName}"?
             This action cannot be undone and may affect system operations.
           </Typography>
         </DialogContent>

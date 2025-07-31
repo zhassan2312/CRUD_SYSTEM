@@ -28,17 +28,16 @@ import {
   Archive,
   Refresh
 } from '@mui/icons-material';
-import { useDashboardStore } from '../../store/admin';
+import { useProjectStore } from '../../store/admin';
 
 const FileStatistics = () => {
-  // Use centralized admin store
+  // Use admin project store for file statistics
   const { 
     fileStats, 
-    fetchFileStatistics, 
-    refreshFileStatistics 
-  } = useDashboardStore();
+    getFileStatistics 
+  } = useProjectStore();
   
-  const { data: stats, loading, error } = fileStats;
+  const { data: stats, loading, error } = fileStats || { data: null, loading: false, error: null };
 
   const getFileIcon = (mimeType) => {
     if (mimeType.startsWith('image/')) return <Image color="primary" />;
@@ -78,12 +77,12 @@ const FileStatistics = () => {
   };
 
   useEffect(() => {
-    fetchFileStatistics();
-  }, [fetchFileStatistics]);
+    getFileStatistics();
+  }, [getFileStatistics]);
 
   const handleRefresh = async () => {
     try {
-      await refreshFileStatistics();
+      await getFileStatistics();
     } catch (error) {
       console.error('Error refreshing file statistics:', error);
     }
